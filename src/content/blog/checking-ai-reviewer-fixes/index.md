@@ -6,7 +6,7 @@ tags:
   - ai
   - code-review
   - testing
-draft: true
+draft: false
 ---
 
 There is a failure mode that comes up in almost every account I read from teams running AI reviewers at scale. The reviewer leaves a comment. The comment is correct. The author accepts the suggested fix. The fix is wrong.

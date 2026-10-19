@@ -6,7 +6,7 @@ tags:
   - ai
   - engineering-management
   - delivery
-draft: true
+draft: false
 ---
 
 I manage a squad in a SaaS company. We adopted coding agents this year and we are at the very beginning of rethinking how we work around them. From where I sit, one thing already bothers me more than the quality of the generated code. The queue.

@@ -6,7 +6,7 @@ tags:
   - ai
   - code-review
   - delivery
-draft: true
+draft: false
 ---
 
 Every discussion about AI code review ends on the same question. If the bot reviews the PR, can the bot merge it?
