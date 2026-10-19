@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex">
+<title>Mission Multiplication - De la Terre à la Lune</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Trebuchet MS', sans-serif;
+    background: #000;
+    color: #fff;
+    overflow: hidden;
+    height: 100vh;
+    user-select: none;
+  }
+
+  #game {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(ellipse at center, #1b2735 0%, #090a0f 100%);
+    overflow: hidden;
+  }
+
+  /* Étoiles défilantes (de droite à gauche, comme si on voyageait) */
+  .stars {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    background-image:
+      radial-gradient(2px 2px at 20px 30px, white, transparent),
+      radial-gradient(1px 1px at 40px 70px, white, transparent),
+      radial-gradient(1px 1px at 90px 40px, white, transparent),
+      radial-gradient(2px 2px at 130px 80px, white, transparent),
+      radial-gradient(1px 1px at 160px 120px, white, transparent),
+      radial-gradient(2px 2px at 200px 50px, white, transparent),
+      radial-gradient(1px 1px at 240px 90px, white, transparent),
+      radial-gradient(1px 1px at 280px 30px, white, transparent),
+      radial-gradient(2px 2px at 320px 110px, white, transparent),
+      radial-gradient(1px 1px at 360px 60px, white, transparent),
+      radial-gradient(1px 1px at 100px 150px, white, transparent),
+      radial-gradient(2px 2px at 220px 200px, white, transparent),
+      radial-gradient(1px 1px at 300px 250px, white, transparent),
+      radial-gradient(1px 1px at 50px 300px, white, transparent),
+      radial-gradient(2px 2px at 180px 350px, white, transparent);
+    background-size: 400px 400px;
+    background-repeat: repeat;
+    animation: scroll-stars 30s linear infinite;
+  }
+
+  .stars.fast {
+    animation-duration: 4s;
+  }
+
+  .stars.crashed {
+    animation-play-state: paused;
+  }
+
+  @keyframes scroll-stars {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* HUD */
+  .hud {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-around;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .hud-item {
+    background: rgba(0, 30, 60, 0.7);
+    border: 2px solid #00d4ff;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 1.2em;
+    text-shadow: 0 0 10px #00d4ff;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  }
+
+  /* Trajet Terre - Mars */
+  .journey {
+    position: absolute;
+    top: 55%;
+    left: 5%;
+    right: 5%;
+    height: 4px;
+    background: linear-gradient(90deg,
+      rgba(100, 180, 255, 0.6) 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(245, 245, 220, 0.7) 100%);
+    border-radius: 2px;
+    z-index: 2;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+  }
+
+  /* Terre */
+  .earth {
+    position: absolute;
+    top: 50%;
+    left: 3%;
+    transform: translateY(-50%);
+    font-size: 90px;
+    z-index: 3;
+    filter: drop-shadow(0 0 25px #4a90e2);
+    animation: planet-glow 4s ease-in-out infinite;
+  }
+
+  /* Mars */
+  .mars {
+    position: absolute;
+    top: 50%;
+    right: 3%;
+    transform: translateY(-50%);
+    font-size: 90px;
+    z-index: 3;
+    filter: drop-shadow(0 0 25px #f5f5dc);
+    animation: planet-glow 4s ease-in-out infinite;
+  }
+
+  @keyframes planet-glow {
+    0%, 100% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.05); }
+  }
+
+  /* Labels planètes */
+  .planet-label {
+    position: absolute;
+    top: calc(50% + 75px);
+    font-size: 1em;
+    font-weight: bold;
+    z-index: 3;
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  .label-earth {
+    left: 3%;
+    transform: translateX(15px);
+    color: #4a90e2;
+  }
+
+  .label-mars {
+    right: 3%;
+    transform: translateX(-15px);
+    color: #f5f5dc;
+  }
+
+  /* Vaisseau */
+  .ship {
+    position: absolute;
+    top: 50%;
+    left: 8%;
+    transform: translateY(-50%);
+    font-size: 70px;
+    z-index: 5;
+    filter: drop-shadow(0 0 15px #00d4ff);
+    transition: left 0.7s cubic-bezier(0.34, 1.2, 0.64, 1);
+  }
+
+  .ship.advance {
+    animation: thrust 0.7s ease-out;
+  }
+
+  .ship.crashed {
+    animation: crash 1.5s ease-in forwards;
+  }
+
+  .ship.return {
+    transition: left 1.2s cubic-bezier(0.45, 0, 0.55, 1);
+  }
+
+  @keyframes thrust {
+    0% { transform: translateY(-50%) scale(1); }
+    30% { transform: translateY(-50%) translateY(-15px) scale(1.1); filter: drop-shadow(0 0 30px #00ffaa); }
+    100% { transform: translateY(-50%) scale(1); }
+  }
+
+  @keyframes crash {
+    0% { transform: translateY(-50%) rotate(0) scale(1); opacity: 1; }
+    40% { transform: translateY(-50%) rotate(180deg) scale(0.9); opacity: 0.9; }
+    100% { transform: translateY(-50%) translateY(80px) rotate(720deg) scale(0.2); opacity: 0; }
+  }
+
+  /* Traînée du vaisseau */
+  .ship-trail {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 30px;
+    z-index: 4;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .ship-trail.active {
+    animation: trail 0.7s ease-out;
+  }
+
+  @keyframes trail {
+    0% { opacity: 0.9; transform: translateY(-50%) scale(1); }
+    100% { opacity: 0; transform: translateY(-50%) scale(0.3) translateX(-50px); }
+  }
+
+  /* Question */
+  .question-box {
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 10;
+  }
+
+  .question {
+    font-size: 4.5em;
+    font-weight: bold;
+    text-shadow: 0 0 20px #00d4ff, 0 0 40px #00d4ff;
+    margin-bottom: 20px;
+    color: #fff;
+  }
+
+  .answer-input {
+    width: 200px;
+    height: 75px;
+    font-size: 2.8em;
+    text-align: center;
+    background: rgba(0, 30, 60, 0.8);
+    border: 3px solid #00d4ff;
+    border-radius: 15px;
+    color: #fff;
+    outline: none;
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+    font-family: 'Trebuchet MS', sans-serif;
+    font-weight: bold;
+  }
+
+  .answer-input:focus {
+    border-color: #00ffaa;
+    box-shadow: 0 0 40px rgba(0, 255, 170, 0.7);
+  }
+
+  .hint {
+    margin-top: 15px;
+    font-size: 1em;
+    opacity: 0.7;
+  }
+
+  /* Feedback */
+  .feedback {
+    position: absolute;
+    top: 72%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3em;
+    font-weight: bold;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 20;
+    text-align: center;
+  }
+
+  .feedback.show-success {
+    animation: pop-success 1.2s ease-out;
+    color: #00ff88;
+    text-shadow: 0 0 20px #00ff88;
+  }
+
+  .feedback.show-fail {
+    animation: pop-fail 1.8s ease-out;
+    color: #ff3366;
+    text-shadow: 0 0 20px #ff3366;
+  }
+
+  @keyframes pop-success {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    30% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+    70% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+  }
+
+  @keyframes pop-fail {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    30% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(-3deg); }
+    70% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+  }
+
+  /* Explosion */
+  .explosion {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 130px;
+    opacity: 0;
+    z-index: 6;
+    pointer-events: none;
+  }
+
+  .explosion.boom {
+    animation: explode 1.5s ease-out forwards;
+  }
+
+  @keyframes explode {
+    0% { opacity: 0; transform: translateY(-50%) scale(0.3); }
+    30% { opacity: 1; transform: translateY(-50%) scale(1.8); }
+    100% { opacity: 0; transform: translateY(-50%) scale(2.8); }
+  }
+
+  /* Écran de fin */
+  .end-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.88);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 100;
+  }
+
+  .end-screen.show {
+    display: flex;
+  }
+
+  .end-screen h1 {
+    font-size: 4em;
+    margin-bottom: 20px;
+    text-shadow: 0 0 20px currentColor;
+    text-align: center;
+  }
+
+  .end-screen.victory h1 { color: #00ff88; }
+
+  .end-screen p {
+    font-size: 1.5em;
+    margin-bottom: 30px;
+    text-align: center;
+  }
+
+  .restart-btn {
+    padding: 15px 40px;
+    font-size: 1.5em;
+    background: #00d4ff;
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.7);
+  }
+
+  .restart-btn:hover {
+    background: #00ffaa;
+    transform: scale(1.05);
+  }
+
+  /* Indicateur de progression sur le trajet */
+  .progress-dots {
+    position: absolute;
+    top: 55%;
+    left: 5%;
+    right: 5%;
+    height: 4px;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+
+  .dot.reached {
+    background: #00ffaa;
+    box-shadow: 0 0 10px #00ffaa;
+  }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .question { font-size: 3.2em; }
+    .answer-input { width: 150px; height: 60px; font-size: 2em; }
+    .ship { font-size: 50px; }
+    .earth, .mars { font-size: 60px; }
+    .hud-item { font-size: 0.9em; padding: 7px 10px; }
+    .hud { gap: 5px; }
+    .question-box { top: 12%; }
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <div class="stars" id="stars"></div>
+
+  <div class="hud">
+    <div class="hud-item">Score : <span id="score">0</span></div>
+    <div class="hud-item">Crashs : <span id="crashes">0</span></div>
+    <div class="hud-item">Distance : <span id="distance">0</span>/10</div>
+  </div>
+
+  <div class="question-box" id="questionBox">
+    <div class="question" id="question">3 × 4</div>
+    <input type="number" class="answer-input" id="answer" autocomplete="off" autofocus>
+    <div class="hint">Tape la réponse et appuie sur Entrée</div>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <!-- Trajet -->
+  <div class="journey"></div>
+  <div class="progress-dots" id="dots"></div>
+
+  <!-- Planètes -->
+  <div class="earth">🌍</div>
+  <div class="planet-label label-earth">TERRE</div>
+  <div class="mars">🌕</div>
+  <div class="planet-label label-mars">LUNE</div>
+
+  <!-- Vaisseau -->
+  <div class="ship" id="ship">🚀</div>
+  <div class="explosion" id="explosion">💥</div>
+
+  <div class="end-screen" id="endScreen">
+    <h1 id="endTitle"></h1>
+    <p id="endMessage"></p>
+    <button class="restart-btn" onclick="resetGame()">Nouvelle mission</button>
+  </div>
+</div>
+
+<script>
+  let score = 0;
+  let crashes = 0;
+  let distance = 0;
+  const MAX_DISTANCE = 10;
+  let currentA = 0;
+  let currentB = 0;
+  let isLocked = false;
+
+  // Position du vaisseau : de 8% (Terre) à 87% (Mars)
+  const START_POS = 8;
+  const END_POS = 87;
+
+  const questionEl = document.getElementById('question');
+  const answerEl = document.getElementById('answer');
+  const scoreEl = document.getElementById('score');
+  const crashesEl = document.getElementById('crashes');
+  const distanceEl = document.getElementById('distance');
+  const shipEl = document.getElementById('ship');
+  const explosionEl = document.getElementById('explosion');
+  const feedbackEl = document.getElementById('feedback');
+  const starsEl = document.getElementById('stars');
+  const endScreen = document.getElementById('endScreen');
+  const endTitle = document.getElementById('endTitle');
+  const endMessage = document.getElementById('endMessage');
+  const questionBox = document.getElementById('questionBox');
+  const dotsContainer = document.getElementById('dots');
+
+  // Créer les points de progression
+  for (let i = 0; i < MAX_DISTANCE + 1; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    dotsContainer.appendChild(dot);
+  }
+  const dots = dotsContainer.querySelectorAll('.dot');
+
+  function updateShipPosition() {
+    const ratio = distance / MAX_DISTANCE;
+    const pos = START_POS + (END_POS - START_POS) * ratio;
+    shipEl.style.left = pos + '%';
+  }
+
+  function updateDots() {
+    dots.forEach((dot, i) => {
+      if (i <= distance) {
+        dot.classList.add('reached');
+      } else {
+        dot.classList.remove('reached');
+      }
+    });
+  }
+
+  function newQuestion() {
+    currentA = Math.floor(Math.random() * 5) + 1;
+    currentB = Math.floor(Math.random() * 10) + 1;
+    questionEl.textContent = currentA + ' × ' + currentB;
+    answerEl.value = '';
+    answerEl.focus();
+    isLocked = false;
+  }
+
+  function showFeedback(text, type) {
+    feedbackEl.textContent = text;
+    feedbackEl.className = 'feedback show-' + type;
+    setTimeout(() => {
+      feedbackEl.className = 'feedback';
+    }, 1500);
+  }
+
+  function correctAnswer() {
+    score += 10;
+    distance += 1;
+    scoreEl.textContent = score;
+    distanceEl.textContent = distance;
+
+    updateShipPosition();
+    updateDots();
+
+    shipEl.classList.add('advance');
+    starsEl.classList.add('fast');
+
+    const messages = ['BRAVO !', 'SUPER !', 'EN AVANT !', 'PARFAIT !', 'GÉNIAL !'];
+    showFeedback(messages[Math.floor(Math.random() * messages.length)], 'success');
+
+    setTimeout(() => {
+      shipEl.classList.remove('advance');
+      starsEl.classList.remove('fast');
+    }, 700);
+
+    if (distance >= MAX_DISTANCE) {
+      setTimeout(() => endGame(), 1500);
+    } else {
+      setTimeout(newQuestion, 1200);
+    }
+  }
+
+  function wrongAnswer() {
+    crashes += 1;
+    crashesEl.textContent = crashes;
+
+    const correctValue = currentA * currentB;
+    showFeedback('💥 ' + currentA + ' × ' + currentB + ' = ' + correctValue, 'fail');
+
+    // Positionner l'explosion à l'emplacement actuel du vaisseau
+    const shipLeft = shipEl.style.left || (START_POS + '%');
+    explosionEl.style.left = shipLeft;
+
+    shipEl.classList.add('crashed');
+    explosionEl.classList.add('boom');
+    starsEl.classList.add('crashed');
+
+    setTimeout(() => {
+      // Retour à la Terre
+      distance = 0;
+      distanceEl.textContent = distance;
+      updateDots();
+
+      shipEl.classList.remove('crashed');
+      explosionEl.classList.remove('boom');
+      starsEl.classList.remove('crashed');
+
+      // Téléportation instantanée puis le vaisseau réapparaît
+      shipEl.style.transition = 'none';
+      shipEl.style.left = START_POS + '%';
+      shipEl.style.opacity = '0';
+
+      setTimeout(() => {
+        shipEl.style.transition = '';
+        shipEl.style.opacity = '1';
+        newQuestion();
+      }, 300);
+
+    }, 2200);
+  }
+
+  function endGame() {
+    questionBox.style.display = 'none';
+    endScreen.classList.add('show', 'victory');
+    endTitle.textContent = '🎉 BRAVO, TU ES SUR LA LUNE !';
+    endMessage.innerHTML = 'Score : <strong>' + score + '</strong><br>Crashs : <strong>' + crashes + '</strong>';
+  }
+
+  function resetGame() {
+    score = 0;
+    crashes = 0;
+    distance = 0;
+    scoreEl.textContent = score;
+    crashesEl.textContent = crashes;
+    distanceEl.textContent = distance;
+    updateShipPosition();
+    updateDots();
+    endScreen.classList.remove('show', 'victory');
+    questionBox.style.display = 'block';
+    shipEl.style.opacity = '1';
+    newQuestion();
+  }
+
+  answerEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !isLocked) {
+      const userAnswer = parseInt(answerEl.value, 10);
+      if (isNaN(userAnswer)) return;
+      isLocked = true;
+      const correct = currentA * currentB;
+      if (userAnswer === correct) {
+        correctAnswer();
+      } else {
+        wrongAnswer();
+      }
+    }
+  });
+
+  // Garde le focus sur l'input
+  document.addEventListener('keydown', (e) => {
+    if (document.activeElement !== answerEl && !endScreen.classList.contains('show')) {
+      answerEl.focus();
+    }
+  });
+
+  // Initialisation
+  updateShipPosition();
+  updateDots();
+  newQuestion();
+</script>
+</body>
+</html>

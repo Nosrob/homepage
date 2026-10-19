@@ -1,0 +1,53 @@
+---
+import PageLayout from '@/layouts/CommonPage.astro'
+---
+
+<PageLayout title='About'>
+  <p>I’m Nicolas Borson, an Engineering Manager based in Lyon, France.</p>
+  <p>
+    I lead the Profile squad at <a href='https://batch.com' target='_blank'>Batch</a>, a B2B mobile
+    marketing infrastructure company used by brands to reach and engage their users across app, web,
+    email and SMS. My team owns the profiles platform, one of the most critical and heavily loaded
+    parts of the product: it stores and maintains billions of user profiles and keeps them up to date
+    as data flows in continuously from our customers’ apps, websites and backends.
+  </p>
+  <p>
+    The challenges we work on are those of high-scale, real-time systems. Every event and attribute
+    update has to be ingested, processed and reflected in a profile within seconds, so that marketers
+    can segment, target and trigger messages based on what their users are doing right now. That
+    means handling a constant, high-throughput stream of writes while serving low-latency reads, all
+    with strong guarantees on data consistency and availability. Our stack is built around Kafka for
+    streaming, TiDB as our distributed transactional store, and ClickHouse for analytics, along with
+    the APIs and services that tie them together. Recent work has included migrating core profile
+    storage to TiDB and defining SLOs on indexation lag, so that “real-time” remains a promise we can
+    measure and hold ourselves to.
+  </p>
+  <p>
+    Before becoming an Engineering Manager, I was a Technical Project Manager at Batch. I organized
+    and tracked delivery across the engineering team, and led the change management effort to bring
+    agile practices into how we worked day to day. That experience still shapes how I lead: I care
+    about predictable delivery, clear priorities, and lightweight processes that help teams move
+    faster.
+  </p>
+  <p>
+    Alongside that, I have a strong infrastructure and DevOps background and like to stay close to
+    the technical details: Kafka, Go, Docker and the operational realities of running systems in
+    production. It helps me have meaningful conversations with my engineers, give them clear context
+    and real ownership, and treat reliability and observability as first-class concerns so the
+    platform can keep scaling without becoming harder to operate.
+  </p>
+  <p>
+    I’ve been at Batch long enough to see it grow from a single engineering team into a squad-based
+    organization, a transition I was directly involved in through my project management role.
+    Helping teams stay effective through that kind of change, while keeping a demanding production
+    system healthy, is one of the parts of the job I find most rewarding.
+  </p>
+
+  <h2 id='this-website'>This website</h2>
+  <p>
+    Built with <a href='https://astro.build/' target='_blank'>Astro</a> and the <a
+      href='https://github.com/cworld1/astro-theme-pure'
+      target='_blank'>Pure</a
+    > theme.
+  </p>
+</PageLayout>

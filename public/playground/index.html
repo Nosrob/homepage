@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playground — borson.fr</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Trebuchet MS', system-ui, sans-serif;
+    background: radial-gradient(ellipse at center, #1b2735 0%, #090a0f 100%);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .container {
+    max-width: 720px;
+    width: 100%;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 20px #00d4ff;
+  }
+
+  .subtitle {
+    color: #8aa;
+    margin-bottom: 3rem;
+    font-size: 1.05rem;
+  }
+
+  .projects {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .project {
+    display: block;
+    padding: 1.5rem 1.75rem;
+    background: rgba(0, 30, 60, 0.55);
+    border: 2px solid #00d4ff;
+    border-radius: 12px;
+    color: #fff;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+
+  .project:hover {
+    transform: translateY(-3px);
+    border-color: #00ffaa;
+    box-shadow: 0 0 30px rgba(0, 255, 170, 0.35);
+  }
+
+  .project h2 {
+    font-size: 1.4rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .project p {
+    color: #aac;
+    font-size: 0.95rem;
+  }
+
+  footer {
+    margin-top: 3rem;
+    color: #556;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Playground</h1>
+    <p class="subtitle">Petits projets et playground.</p>
+
+    <div class="projects">
+      <a class="project" href="multiplication/">
+        <h2>Mission Multiplication</h2>
+        <p>Réviser les tables en voyageant de la Terre à la Lune.</p>
+      </a>
+    </div>
+
+    <footer><a href="/" style="color: inherit">← borson.fr</a></footer>
+  </div>
+</body>
+</html>

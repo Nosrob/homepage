@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex">
+<title>Quête Addition — Vers le Château</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Trebuchet MS', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    user-select: none;
+  }
+
+  #game {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Paysage ─────────────────────────────────────── */
+  .sky {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 58%;
+    background: linear-gradient(180deg, #5BC8F5 0%, #A8E4F7 55%, #E8F8FF 100%);
+  }
+
+  .meadow {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 48%;
+    background: linear-gradient(180deg, #7EC850 0%, #5BAB30 50%, #4A9020 100%);
+  }
+
+  .hill {
+    position: absolute;
+    bottom: 44%;
+    background: #7EC850;
+    border-radius: 50%;
+  }
+
+  /* ── Nuages ──────────────────────────────────────── */
+  .clouds {
+    position: absolute;
+    top: 0; left: 0;
+    width: 200%; height: 55%;
+    pointer-events: none;
+    animation: scroll-clouds 50s linear infinite;
+  }
+
+  .cloud {
+    position: absolute;
+    background: white;
+    border-radius: 50px;
+    opacity: 0.9;
+    box-shadow: 0 4px 20px rgba(255,255,255,0.4);
+  }
+
+  @keyframes scroll-clouds {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  /* ── Chemin ──────────────────────────────────────── */
+  .path {
+    position: absolute;
+    top: 53%;
+    left: 5%; right: 5%;
+    height: 14px;
+    background: linear-gradient(90deg, #C8A060, #B08040, #C8A060);
+    border-radius: 7px;
+    z-index: 2;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+  }
+
+  .progress-dots {
+    position: absolute;
+    top: 53%;
+    left: 5%; right: 5%;
+    height: 14px;
+    z-index: 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  .dot {
+    width: 10px; height: 10px;
+    background: rgba(255,255,255,0.35);
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.55);
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+
+  .dot.reached {
+    background: #FFD700;
+    border-color: #FFA500;
+    box-shadow: 0 0 8px #FFD700;
+  }
+
+  /* ── HUD ─────────────────────────────────────────── */
+  .hud {
+    position: absolute;
+    top: 15px; left: 0; right: 0;
+    display: flex;
+    justify-content: space-around;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .hud-item {
+    background: rgba(255, 235, 248, 0.92);
+    border: 2px solid #CC3399;
+    border-radius: 10px;
+    padding: 8px 18px;
+    font-size: 1.1em;
+    color: #7A005A;
+    font-weight: bold;
+    box-shadow: 0 3px 12px rgba(204,51,153,0.2);
+  }
+
+  /* ── Personnages ─────────────────────────────────── */
+  .village {
+    position: absolute;
+    top: 50%; left: 2%;
+    transform: translateY(-55%);
+    font-size: 58px;
+    z-index: 3;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+    animation: gentle-float 4s ease-in-out infinite;
+  }
+
+  .castle {
+    position: absolute;
+    top: 50%; right: 2%;
+    transform: translateY(-55%);
+    font-size: 62px;
+    z-index: 3;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.25));
+    animation: gentle-float 5s ease-in-out infinite;
+  }
+
+  @keyframes gentle-float {
+    0%, 100% { transform: translateY(-55%) scale(1); }
+    50%       { transform: translateY(-58%) scale(1.03); }
+  }
+
+  .place-label {
+    position: absolute;
+    top: calc(53% + 22px);
+    font-size: 0.8em;
+    font-weight: bold;
+    color: #5A003A;
+    text-shadow: 1px 1px 0 rgba(255,255,255,0.7);
+    z-index: 3;
+  }
+
+  .label-village { left: 2%; }
+  .label-castle  { right: 2%; }
+
+  .princess {
+    position: absolute;
+    top: 50%; left: 8%;
+    transform: translateY(-55%);
+    font-size: 50px;
+    z-index: 5;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+    transition: left 0.7s cubic-bezier(0.34, 1.2, 0.64, 1);
+    line-height: 1;
+  }
+
+  .princess.advance {
+    animation: skip 0.7s ease-out;
+  }
+
+  .princess.stumble {
+    animation: stumble 1.8s ease-in forwards;
+  }
+
+  @keyframes skip {
+    0%   { transform: translateY(-55%) scale(1); }
+    25%  { transform: translateY(-80%) scale(1.15) rotate(-8deg); }
+    60%  { transform: translateY(-58%) scale(1.05) rotate(2deg); }
+    100% { transform: translateY(-55%) scale(1); }
+  }
+
+  @keyframes stumble {
+    0%   { transform: translateY(-55%) rotate(0) scale(1); opacity: 1; }
+    30%  { transform: translateY(-55%) rotate(30deg) scale(0.9); opacity: 0.9; }
+    70%  { transform: translateY(-40%) rotate(-15deg) scale(0.75); opacity: 0.7; }
+    100% { transform: translateY(20%) rotate(50deg) scale(0.2); opacity: 0; }
+  }
+
+  .stumble-effect {
+    position: absolute;
+    top: 50%;
+    font-size: 55px;
+    opacity: 0;
+    z-index: 6;
+    pointer-events: none;
+    transform: translateY(-55%);
+  }
+
+  .stumble-effect.boom {
+    animation: poof 1.5s ease-out forwards;
+  }
+
+  @keyframes poof {
+    0%   { opacity: 0; transform: translateY(-55%) scale(0.3); }
+    30%  { opacity: 1; transform: translateY(-55%) scale(1.6); }
+    100% { opacity: 0; transform: translateY(-55%) scale(2.8); }
+  }
+
+  /* ── Question ────────────────────────────────────── */
+  .question-box {
+    position: absolute;
+    top: 14%; left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 10;
+  }
+
+  .question {
+    font-size: 4.5em;
+    font-weight: bold;
+    color: #5A003A;
+    text-shadow: 2px 2px 0 #F8BBD9, 0 0 30px rgba(204,51,153,0.3);
+    margin-bottom: 18px;
+  }
+
+  .answer-input {
+    width: 200px; height: 75px;
+    font-size: 2.8em;
+    text-align: center;
+    background: rgba(255, 240, 250, 0.95);
+    border: 3px solid #CC3399;
+    border-radius: 15px;
+    color: #5A003A;
+    outline: none;
+    box-shadow: 0 0 20px rgba(204,51,153,0.25), 0 4px 15px rgba(0,0,0,0.08);
+    font-family: 'Trebuchet MS', sans-serif;
+    font-weight: bold;
+  }
+
+  .answer-input:focus {
+    border-color: #9900CC;
+    box-shadow: 0 0 30px rgba(153,0,204,0.45);
+  }
+
+  .hint {
+    margin-top: 12px;
+    font-size: 1em;
+    color: #7A005A;
+    opacity: 0.8;
+    font-weight: bold;
+  }
+
+  .hint.continue-hint {
+    color: #CC3399;
+    opacity: 1;
+    animation: hint-blink 1s ease-in-out infinite alternate;
+  }
+
+  @keyframes hint-blink {
+    from { opacity: 0.55; }
+    to   { opacity: 1; }
+  }
+
+  /* ── Feedback ────────────────────────────────────── */
+  .feedback {
+    position: absolute;
+    top: 72%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.4em;
+    font-weight: bold;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 20;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .feedback.show-success {
+    animation: pop-success 1.2s ease-out;
+    color: #1B5E20;
+    text-shadow: 0 0 15px #4CAF50, 2px 2px 0 #A5D6A7;
+  }
+
+  .feedback.show-fail {
+    animation: pop-fail 1.8s ease-out;
+    color: #880000;
+    text-shadow: 0 0 15px #F44336;
+  }
+
+  .feedback.show-fail-persist {
+    opacity: 1;
+    color: #880000;
+    text-shadow: 0 0 15px #F44336;
+    animation: pop-fail-stay 0.6s ease-out;
+  }
+
+  @keyframes pop-success {
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.5); }
+    30%  { opacity: 1; transform: translate(-50%,-50%) scale(1.3); }
+    70%  { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(1); }
+  }
+
+  @keyframes pop-fail {
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.5); }
+    30%  { opacity: 1; transform: translate(-50%,-50%) scale(1.2) rotate(-3deg); }
+    70%  { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(1); }
+  }
+
+  @keyframes pop-fail-stay {
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.4); }
+    50%  { opacity: 1; transform: translate(-50%,-50%) scale(1.25) rotate(-2deg); }
+    100% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+  }
+
+  /* ── Timer ───────────────────────────────────────── */
+  .timer-bar {
+    position: absolute;
+    top: 68px; left: 50%;
+    transform: translateX(-50%);
+    width: 320px; height: 12px;
+    background: rgba(255, 230, 245, 0.8);
+    border: 2px solid #CC3399;
+    border-radius: 8px;
+    overflow: hidden;
+    z-index: 10;
+    display: none;
+    box-shadow: 0 2px 10px rgba(204,51,153,0.2);
+  }
+
+  .timer-bar.active { display: block; }
+
+  .timer-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #F48FB1, #CC3399);
+    transition: width 0.1s linear;
+  }
+
+  .timer-fill.warning { background: linear-gradient(90deg, #FFB74D, #FF9800); }
+
+  .timer-fill.danger {
+    background: linear-gradient(90deg, #EF5350, #B71C1C);
+    animation: pulse-danger 0.4s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-danger {
+    from { box-shadow: 0 0 5px #F44336; }
+    to   { box-shadow: 0 0 20px #F44336; }
+  }
+
+  /* ── Fleurs décoratives ──────────────────────────── */
+  .flower {
+    position: absolute;
+    font-size: 22px;
+    z-index: 1;
+    animation: sway 3s ease-in-out infinite alternate;
+  }
+
+  @keyframes sway {
+    from { transform: rotate(-6deg); }
+    to   { transform: rotate(6deg); }
+  }
+
+  /* ── Écrans démarrage / fin ──────────────────────── */
+  .start-screen, .end-screen {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(255, 235, 248, 0.96);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 100;
+    padding: 20px;
+  }
+
+  .start-screen.show, .end-screen.show { display: flex; }
+
+  .start-screen h1 {
+    font-size: 2.8em;
+    margin-bottom: 8px;
+    color: #6A0050;
+    text-shadow: 2px 2px 0 #F8BBD9;
+    text-align: center;
+  }
+
+  .start-screen .subtitle {
+    font-size: 1.15em;
+    margin-bottom: 28px;
+    color: #7A005A;
+    opacity: 0.85;
+    text-align: center;
+  }
+
+  .option-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 12px 20px;
+    background: rgba(255, 210, 235, 0.6);
+    border: 2px solid #CC3399;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.1em;
+    color: #6A0050;
+    font-weight: bold;
+    transition: all 0.2s;
+    max-width: 500px;
+    width: 100%;
+  }
+
+  .option-toggle:hover {
+    background: rgba(255, 180, 220, 0.85);
+    border-color: #9900CC;
+  }
+
+  .option-toggle input[type="checkbox"] {
+    width: 22px; height: 22px;
+    cursor: pointer;
+    accent-color: #CC3399;
+    flex-shrink: 0;
+  }
+
+  .option-number {
+    width: 58px; height: 34px;
+    font-size: 1em;
+    text-align: center;
+    background: rgba(255, 245, 252, 0.95);
+    border: 2px solid #CC3399;
+    border-radius: 6px;
+    color: #6A0050;
+    outline: none;
+    font-family: inherit;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  .option-number:focus { border-color: #9900CC; }
+
+  .start-btn {
+    padding: 16px 48px;
+    font-size: 1.5em;
+    background: linear-gradient(135deg, #CC3399, #9900CC);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 20px rgba(204,51,153,0.45);
+    font-family: inherit;
+    margin-top: 12px;
+    transition: all 0.2s;
+  }
+
+  .start-btn:hover {
+    background: linear-gradient(135deg, #AA2277, #7700AA);
+    transform: scale(1.05);
+    box-shadow: 0 6px 28px rgba(204,51,153,0.6);
+  }
+
+  .end-screen h1 {
+    font-size: 3.2em;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #5A003A;
+    text-shadow: 2px 2px 0 #F8BBD9;
+  }
+
+  .end-screen.victory h1 {
+    color: #1B5E20;
+    text-shadow: 2px 2px 0 #C8E6C9;
+  }
+
+  .end-screen p {
+    font-size: 1.5em;
+    margin-bottom: 30px;
+    text-align: center;
+    color: #6A0050;
+  }
+
+  .restart-btn {
+    padding: 14px 38px;
+    font-size: 1.4em;
+    background: linear-gradient(135deg, #CC3399, #9900CC);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(204,51,153,0.4);
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+
+  .restart-btn:hover {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, #AA2277, #7700AA);
+  }
+
+  /* ── Responsive ──────────────────────────────────── */
+  @media (max-width: 700px) {
+    .question      { font-size: 3.2em; }
+    .answer-input  { width: 150px; height: 60px; font-size: 2em; }
+    .princess      { font-size: 36px; }
+    .castle, .village { font-size: 44px; }
+    .hud-item      { font-size: 0.9em; padding: 6px 10px; }
+    .start-screen h1 { font-size: 2em; }
+    .timer-bar     { width: 80%; top: 62px; }
+    .question-box  { top: 10%; }
+  }
+</style>
+</head>
+<body>
+<div id="game">
+
+  <div class="sky"></div>
+  <div class="meadow"></div>
+
+  <!-- Collines -->
+  <div class="hill" style="width:500px;height:180px;left:-80px;bottom:42%"></div>
+  <div class="hill" style="width:380px;height:140px;left:30%;bottom:43%"></div>
+  <div class="hill" style="width:450px;height:160px;right:-60px;bottom:42%"></div>
+
+  <!-- Nuages -->
+  <div class="clouds">
+    <div class="cloud" style="width:130px;height:42px;top:7%;left:4%"></div>
+    <div class="cloud" style="width:85px;height:30px;top:13%;left:13%"></div>
+    <div class="cloud" style="width:160px;height:50px;top:5%;left:26%"></div>
+    <div class="cloud" style="width:110px;height:38px;top:17%;left:42%"></div>
+    <div class="cloud" style="width:140px;height:44px;top:9%;left:58%"></div>
+    <div class="cloud" style="width:95px;height:32px;top:14%;left:72%"></div>
+    <div class="cloud" style="width:170px;height:52px;top:4%;left:84%"></div>
+    <!-- doublons pour boucle infinie -->
+    <div class="cloud" style="width:130px;height:42px;top:7%;left:104%"></div>
+    <div class="cloud" style="width:85px;height:30px;top:13%;left:113%"></div>
+    <div class="cloud" style="width:160px;height:50px;top:5%;left:126%"></div>
+    <div class="cloud" style="width:110px;height:38px;top:17%;left:142%"></div>
+    <div class="cloud" style="width:140px;height:44px;top:9%;left:158%"></div>
+    <div class="cloud" style="width:95px;height:32px;top:14%;left:172%"></div>
+    <div class="cloud" style="width:170px;height:52px;top:4%;left:184%"></div>
+  </div>
+
+  <!-- Fleurs -->
+  <div class="flower" style="bottom:11%;left:12%;animation-delay:0s">🌸</div>
+  <div class="flower" style="bottom:8%;left:22%;animation-delay:0.6s">🌼</div>
+  <div class="flower" style="bottom:12%;left:35%;animation-delay:1.1s">🌺</div>
+  <div class="flower" style="bottom:9%;left:48%;animation-delay:0.3s">🌸</div>
+  <div class="flower" style="bottom:11%;left:60%;animation-delay:0.9s">🌼</div>
+  <div class="flower" style="bottom:7%;left:73%;animation-delay:1.4s">🌺</div>
+  <div class="flower" style="bottom:10%;left:84%;animation-delay:0.5s">🌸</div>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-item">💔 Chutes : <span id="crashes">0</span></div>
+    <div class="hud-item">👟 Pas : <span id="distance">0</span> / <span id="maxDistance">15</span></div>
+  </div>
+
+  <!-- Timer -->
+  <div class="timer-bar" id="timerBar">
+    <div class="timer-fill" id="timerFill"></div>
+  </div>
+
+  <!-- Question -->
+  <div class="question-box" id="questionBox">
+    <div class="question" id="question">7 + 12</div>
+    <input type="number" class="answer-input" id="answer" autocomplete="off" autofocus inputmode="numeric">
+    <div class="hint" id="hint">Tape la réponse et appuie sur Entrée</div>
+  </div>
+
+  <!-- Feedback -->
+  <div class="feedback" id="feedback"></div>
+
+  <!-- Chemin -->
+  <div class="path"></div>
+  <div class="progress-dots" id="dots"></div>
+
+  <!-- Personnages -->
+  <div class="village">🏠</div>
+  <div class="place-label label-village">TON VILLAGE</div>
+  <div class="castle">🏰</div>
+  <div class="place-label label-castle">LE CHÂTEAU</div>
+
+  <div class="princess" id="princess">👸</div>
+  <div class="stumble-effect" id="stumbleEffect">✨</div>
+
+  <!-- Écran démarrage -->
+  <div class="start-screen show" id="startScreen">
+    <h1>👸 Quête Addition</h1>
+    <p class="subtitle">Aide la princesse à rejoindre son château !</p>
+
+    <label class="option-toggle">
+      <input type="checkbox" id="timerCheckbox">
+      <span>⏱ Mode chrono —</span>
+      <input type="number" class="option-number" id="timerSecondsInput" value="10" min="3" max="99" onclick="event.stopPropagation()">
+      <span>sec par réponse</span>
+    </label>
+
+    <div class="option-toggle" style="cursor:default;">
+      <span>👟 Pas avant le château :</span>
+      <input type="number" class="option-number" id="stepsInput" value="15" min="1" max="99" onclick="event.stopPropagation()">
+    </div>
+
+    <button class="start-btn" onclick="startGame()">C'est parti ! 🌟</button>
+  </div>
+
+  <!-- Écran fin -->
+  <div class="end-screen" id="endScreen">
+    <h1 id="endTitle"></h1>
+    <p id="endMessage"></p>
+    <button class="restart-btn" onclick="backToSelection()">Nouvelle quête ✨</button>
+  </div>
+</div>
+
+<script>
+  // Nombres de 3 à 20 — les plus grands un peu plus fréquents pour éviter les calculs trop simples
+  const POOL = [3,4,5,6,7,8,9,10,10,11,11,12,12,13,13,14,14,15,16,17,18,19,20];
+
+  const START_POS = 8;
+  const END_POS   = 87;
+
+  let crashes  = 0;
+  let distance = 0;
+  let maxDistance   = 15;
+  let timerDuration = 10;
+  let currentA = 0, currentB = 0;
+  let isLocked = false;
+  let waitingForContinue = false;
+  let timerEnabled = false;
+  let timerStart = 0, timerRafId = null;
+
+  const startScreen   = document.getElementById('startScreen');
+  const endScreen     = document.getElementById('endScreen');
+  const endTitle      = document.getElementById('endTitle');
+  const endMessage    = document.getElementById('endMessage');
+  const questionBox   = document.getElementById('questionBox');
+  const questionEl    = document.getElementById('question');
+  const answerEl      = document.getElementById('answer');
+  const crashesEl     = document.getElementById('crashes');
+  const distanceEl    = document.getElementById('distance');
+  const maxDistanceEl = document.getElementById('maxDistance');
+  const princessEl    = document.getElementById('princess');
+  const stumbleEl     = document.getElementById('stumbleEffect');
+  const feedbackEl    = document.getElementById('feedback');
+  const dotsContainer = document.getElementById('dots');
+  const hintEl        = document.getElementById('hint');
+  const timerBar      = document.getElementById('timerBar');
+  const timerFill     = document.getElementById('timerFill');
+
+  function updatePosition() {
+    const pos = START_POS + (END_POS - START_POS) * (distance / maxDistance);
+    princessEl.style.left = pos + '%';
+  }
+
+  function updateDots() {
+    dotsContainer.querySelectorAll('.dot').forEach((dot, i) => {
+      dot.classList.toggle('reached', i <= distance);
+    });
+  }
+
+  function startGame() {
+    timerEnabled  = document.getElementById('timerCheckbox').checked;
+    timerDuration = Math.max(3, parseInt(document.getElementById('timerSecondsInput').value) || 10);
+    maxDistance   = Math.max(1, parseInt(document.getElementById('stepsInput').value) || 15);
+
+    waitingForContinue = false;
+    startScreen.classList.remove('show');
+    questionBox.style.display = 'block';
+    princessEl.style.opacity  = '1';
+    crashes = 0; distance = 0;
+    crashesEl.textContent     = 0;
+    distanceEl.textContent    = 0;
+    maxDistanceEl.textContent = maxDistance;
+
+    dotsContainer.innerHTML = '';
+    for (let i = 0; i <= maxDistance; i++) {
+      const d = document.createElement('div');
+      d.className = 'dot';
+      dotsContainer.appendChild(d);
+    }
+
+    updatePosition();
+    updateDots();
+    newQuestion();
+  }
+
+  function backToSelection() {
+    stopTimer();
+    waitingForContinue   = false;
+    feedbackEl.className = 'feedback';
+    hintEl.className     = 'hint';
+    hintEl.textContent   = 'Tape la réponse et appuie sur Entrée';
+    endScreen.classList.remove('show', 'victory');
+    startScreen.classList.add('show');
+  }
+
+  function stopTimer() {
+    if (timerRafId !== null) { cancelAnimationFrame(timerRafId); timerRafId = null; }
+    timerBar.classList.remove('active');
+  }
+
+  function startTimer() {
+    if (!timerEnabled) return;
+    timerStart = performance.now();
+    timerBar.classList.add('active');
+    timerFill.classList.remove('warning', 'danger');
+    timerFill.style.width = '100%';
+
+    const tick = (now) => {
+      const remaining = timerDuration - (now - timerStart) / 1000;
+      if (remaining <= 0) {
+        timerFill.style.width = '0%';
+        timerRafId = null;
+        if (!isLocked) { isLocked = true; timeoutFail(); }
+        return;
+      }
+      const ratio = remaining / timerDuration;
+      timerFill.style.width = (ratio * 100) + '%';
+      if      (ratio < 0.25) { timerFill.classList.add('danger');  timerFill.classList.remove('warning'); }
+      else if (ratio < 0.5)  { timerFill.classList.add('warning'); timerFill.classList.remove('danger');  }
+      else                   { timerFill.classList.remove('warning', 'danger'); }
+      timerRafId = requestAnimationFrame(tick);
+    };
+    timerRafId = requestAnimationFrame(tick);
+  }
+
+  function timeoutFail() {
+    showFeedback('⏰ Trop tard ! ' + currentA + ' + ' + currentB + ' = ' + (currentA + currentB), 'fail', true);
+    crashPrincess();
+  }
+
+  function newQuestion() {
+    // Évite de poser deux fois la même question de suite
+    let a, b;
+    do {
+      a = POOL[Math.floor(Math.random() * POOL.length)];
+      b = POOL[Math.floor(Math.random() * POOL.length)];
+    } while (a === currentA && b === currentB);
+    currentA = a; currentB = b;
+    questionEl.textContent = currentA + ' + ' + currentB;
+    answerEl.value = '';
+    answerEl.focus();
+    isLocked = false;
+    startTimer();
+  }
+
+  function showFeedback(text, type, persist) {
+    feedbackEl.textContent = text;
+    feedbackEl.className   = 'feedback show-' + (persist ? type + '-persist' : type);
+    if (!persist) setTimeout(() => { feedbackEl.className = 'feedback'; }, 1500);
+  }
+
+  function correctAnswer() {
+    stopTimer();
+    distance++;
+    distanceEl.textContent = distance;
+    updatePosition();
+    updateDots();
+
+    princessEl.classList.add('advance');
+    const msgs = ['BRAVO ! 🌟', 'SUPER ! ✨', 'EN AVANT ! 🌸', 'PARFAIT ! 💫', 'GÉNIAL ! 🎉', 'OUI ! 👑'];
+    showFeedback(msgs[Math.floor(Math.random() * msgs.length)], 'success');
+    setTimeout(() => princessEl.classList.remove('advance'), 700);
+
+    if (distance >= maxDistance) {
+      setTimeout(endGame, 1500);
+    } else {
+      setTimeout(newQuestion, 1200);
+    }
+  }
+
+  function wrongAnswer() {
+    showFeedback('💥 ' + currentA + ' + ' + currentB + ' = ' + (currentA + currentB), 'fail', true);
+    crashPrincess();
+  }
+
+  function crashPrincess() {
+    stopTimer();
+    crashes++;
+    crashesEl.textContent = crashes;
+
+    stumbleEl.style.left = princessEl.style.left || (START_POS + '%');
+    princessEl.classList.add('stumble');
+    stumbleEl.classList.add('boom');
+
+    setTimeout(() => {
+      distance = 0;
+      distanceEl.textContent = 0;
+      updateDots();
+
+      princessEl.classList.remove('stumble');
+      stumbleEl.classList.remove('boom');
+      princessEl.style.transition = 'none';
+      princessEl.style.left       = START_POS + '%';
+      princessEl.style.opacity    = '0';
+
+      setTimeout(() => {
+        princessEl.style.transition = '';
+        princessEl.style.opacity    = '1';
+        waitingForContinue = true;
+        hintEl.className   = 'hint continue-hint';
+        hintEl.textContent = 'Appuie sur une touche pour continuer…';
+      }, 300);
+    }, 2200);
+  }
+
+  function endGame() {
+    stopTimer();
+    questionBox.style.display = 'none';
+    endScreen.classList.add('show', 'victory');
+    endTitle.textContent = '🎉 BRAVO ! LA PRINCESSE EST AU CHÂTEAU !';
+    endMessage.innerHTML = 'Chutes : <strong>' + crashes + '</strong>';
+  }
+
+  function continueAfterCrash() {
+    waitingForContinue   = false;
+    feedbackEl.className = 'feedback';
+    hintEl.className     = 'hint';
+    hintEl.textContent   = 'Tape la réponse et appuie sur Entrée';
+    newQuestion();
+  }
+
+  answerEl.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || isLocked) return;
+    const val = parseInt(answerEl.value, 10);
+    if (isNaN(val)) return;
+    isLocked = true;
+    if (val === currentA + currentB) { correctAnswer(); } else { wrongAnswer(); }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (waitingForContinue) { continueAfterCrash(); return; }
+    if (document.activeElement !== answerEl &&
+        !endScreen.classList.contains('show') &&
+        !startScreen.classList.contains('show')) {
+      answerEl.focus();
+    }
+  });
+
+  document.getElementById('game').addEventListener('pointerdown', () => {
+    if (waitingForContinue) continueAfterCrash();
+  });
+
+  questionBox.style.display = 'none';
+  updatePosition();
+</script>
+</body>
+</html>
