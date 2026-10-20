@@ -1,6 +1,6 @@
 ---
 title: Checking the fixes an AI reviewer suggests
-publishDate: 2026-11-03
+publishDate: 2026-10-20
 description: AI reviewers are often right about the problem and wrong about the correction. How to verify what they suggest, and when to stop the loop.
 tags:
   - ai

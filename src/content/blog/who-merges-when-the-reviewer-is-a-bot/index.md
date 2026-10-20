@@ -1,7 +1,7 @@
 ---
 title: Who merges when the reviewer is a bot
-publishDate: 2026-10-27
-description: Under what conditions should an agent approve a pull request, or merge it? The teams that have tried it converge on the same three rules, and none of them starts with "trust the model".
+publishDate: 2026-10-18
+description: When should an agent approve a pull request, or merge it? Teams that tried it converge on three rules, and none of them starts with "trust the model".
 tags:
   - ai
   - code-review
@@ -42,7 +42,9 @@ Auto-merge is level 3 only. Easy to verify and cheap to undo, which in practice 
 
 The obvious shortcut is to ask the reviewing agent whether the PR is safe to merge. Resist it.
 
-First because an LLM judging its own category is exactly the setup that fails. JudgeBiasBench, a preprint from this spring ([arXiv 2604.23178](https://arxiv.org/abs/2604.23178)), measured LLM-as-judge at over 50 percent error on bias detection, with style bias dominating. One number from one preprint, but it matches what anyone who has watched a model grade its own homework already suspects. A lone LLM judge makes a poor production gate.
+First because an LLM judging its own category is exactly the setup that fails. JudgeBiasBench, a benchmark published in March ([arXiv 2603.08091](https://arxiv.org/abs/2603.08091)), injects twelve kinds of irrelevant cues into judging tasks. Current LLM judges show significant and diverse bias patterns across them, enough to compromise automated evaluation. A study on debiasing strategies from April ([arXiv 2604.23178](https://arxiv.org/abs/2604.23178)) finds style bias, such as preferring markdown over plain prose, far stronger than position bias.
+
+Neither paper looks at code review. Both match what anyone who has watched a model grade its own homework already suspects, and that is enough for me to keep a lone LLM judge away from a production gate.
 
 Second because the useful classification is mostly deterministic. Which paths did the diff touch? Does it change a migration, a payment flow, a permission check, a CI workflow file? Does it add code behind a flag or change existing behaviour? Those are rules. A path-based labeler answers them before any model runs.
 

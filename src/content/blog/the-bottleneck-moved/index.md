@@ -1,6 +1,6 @@
 ---
 title: The bottleneck moved
-publishDate: 2026-10-20
+publishDate: 2026-10-16
 description: Code got cheap to write. Review and testing did not. What a thirty-year-old factory vocabulary says about the queue forming in front of your reviewers.
 tags:
   - ai
