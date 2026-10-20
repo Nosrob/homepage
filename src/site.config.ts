@@ -7,7 +7,8 @@ export const theme: ThemeUserConfig = {
   /** Will be used in index page & copyright declaration */
   author: 'Nicolas Borson',
   /** Description metadata for your website. Can be used in page metadata. */
-  description: 'Engineering Manager at Batch, based in Lyon, France',
+  description:
+    'Engineering manager at Batch, writing about how AI coding agents change code review, testing and software delivery.',
   /** The default favicon for your site which should be a path to an image in the `public/` directory. */
   favicon: '/favicon/favicon.svg',
   /** The default social card image for your site which should be a path to an image in the `public/` directory. */

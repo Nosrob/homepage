@@ -2,16 +2,70 @@
 import { Font } from 'astro:assets'
 
 import { prod } from 'astro-pure/server'
-import type { SiteMeta } from 'astro-pure/types'
+import type { PageMeta } from '@/types'
 import config from 'virtual:config'
 
-type Props = SiteMeta
+type Props = PageMeta
 
-const { articleDate, description, ogImage, title } = Astro.props
+const { articleDate, modifiedDate, tags, description, ogImage, title } = Astro.props
 
 const siteTitle = `${title} ${config.titleDelimiter} ${config.title}`
-const canonicalURL = new URL(Astro.url.pathname, Astro.site)
+// `build.format: 'file'` renders `/about.html` and `/index.html`; the public URLs are `/about` and `/`.
+const canonicalPath = Astro.url.pathname.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '')
+const canonicalURL = new URL(canonicalPath, Astro.site)
 const socialImageURL = new URL(ogImage ? ogImage : config.socialCard, Astro.url).href
+
+// Structured data: who writes here, and what each post is.
+const homeURL = new URL('/', Astro.site).href
+const person = {
+  '@type': 'Person',
+  '@id': `${homeURL}#person`,
+  name: config.author,
+  url: homeURL,
+  jobTitle: 'Engineering Manager',
+  worksFor: { '@type': 'Organization', name: 'Batch', url: 'https://batch.com' },
+  homeLocation: { '@type': 'Place', name: 'Lyon, France' },
+  knowsAbout: [
+    'Engineering management',
+    'AI-assisted software development',
+    'Code review',
+    'Software delivery'
+  ],
+  sameAs: config.footer.social?.map(({ href }) => href) ?? []
+}
+const graph: Record<string, unknown>[] = [person]
+if (canonicalPath === '/') {
+  graph.push({
+    '@type': 'WebSite',
+    '@id': `${homeURL}#website`,
+    url: homeURL,
+    name: config.title,
+    description,
+    inLanguage: config.locale.lang,
+    publisher: { '@id': person['@id'] }
+  })
+}
+if (articleDate) {
+  graph.push({
+    '@type': 'BlogPosting',
+    headline: title,
+    description,
+    url: canonicalURL.href,
+    mainEntityOfPage: canonicalURL.href,
+    image: socialImageURL,
+    datePublished: articleDate,
+    dateModified: modifiedDate ?? articleDate,
+    author: { '@id': person['@id'] },
+    publisher: { '@id': person['@id'] },
+    inLanguage: config.locale.lang,
+    ...(tags?.length && { keywords: tags.join(', ') })
+  })
+}
+// `<` escaped so a title can never close the script tag.
+const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph }).replace(
+  /</g,
+  '\\u003c'
+)
 ---
 
 <meta charset='utf-8' />
@@ -65,9 +119,14 @@ const socialImageURL = new URL(ogImage ? ogImage : config.socialCard, Astro.url)
     <>
       <meta content={config.author} property='article:author' />
       <meta content={articleDate} property='article:published_time' />
+      <meta content={modifiedDate ?? articleDate} property='article:modified_time' />
+      {tags?.map((tag) => <meta content={tag} property='article:tag' />)}
     </>
   )
 }
+
+{/* Structured data */}
+<script is:inline type='application/ld+json' set:html={jsonLd} />
 
 {/* Twitter */}
 <meta content='summary_large_image' property='twitter:card' />
