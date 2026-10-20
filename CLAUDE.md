@@ -22,6 +22,7 @@ Context and guidelines for Claude when working in this repo.
 | `public/playground/` | Personal vibe-coded games, served as-is at `/playground/` — **unlisted**: never link it from the site (menu, home, posts) |
 | `src/assets/avatar.jpg` | Profile picture (homepage); `public/images/social-card.jpg` is cut from the same photo |
 | `public/favicon/favicon.svg` | "NB" monogram; the PNGs next to it are rasterized from it (16/32/180/192/512) |
+| `src/components/Mermaid.astro` | Draws ```` ```mermaid ```` blocks in posts: neo look, Nord palette, light/dark |
 
 ## Adding a blog post
 
@@ -42,6 +43,57 @@ draft: false                    # true = only visible in dev
 
 Schema lives in `src/content.config.ts`; the build fails on invalid frontmatter. Code blocks get
 syntax highlighting, copy button and collapse automatically (Shiki, `astro.config.ts`).
+
+## Diagrams
+
+Write diagrams as ```` ```mermaid ```` code blocks in the post. They are rendered in the browser by
+`src/components/Mermaid.astro` (loaded on blog posts only, mermaid itself is fetched only when a post
+has a diagram) and redrawn when the reader toggles the theme. No image to export, nothing to commit
+besides the Markdown.
+
+Art direction, applied automatically, never restyled per diagram:
+
+- **Look**: mermaid `neo` (rounded cards, 1.5px borders, soft shadow), Satoshi 15px like the body text.
+- **Colors**: [Nord](https://www.nordtheme.com). Default nodes are white (light) / nord1 (dark) with a
+  Frost border; edges Polar Night / Snow Storm. The palette lives in `PALETTE` in the component:
+  change it there, nowhere else.
+- **Emphasis** (flowcharts, state diagrams): `node:::hl` = Aurora red, the thing the paragraph is
+  about (one or two nodes at most); `node:::alt` = Aurora yellow, a secondary contrast. No `style`,
+  `classDef`, `%%{init}%%` or hex colors in posts: they would break dark mode or the palette.
+- **Charts**: series colors go Frost, Aurora red, yellow, green, in that order. Put the series the
+  paragraph is about first or second.
+
+Pick the type from what the paragraph says, not by default:
+
+| The text describes | Use | Example in the posts |
+|---|---|---|
+| A process, a loop, who decides what | `flowchart` | the delivery chain, the reviewer-fix loop |
+| Two criteria that split cases into four | `quadrantChart` | trust levels (verify × undo) |
+| A few figures to compare | `xychart` (bars) | Faros AI adoption numbers |
+| A share of a whole (2–4 parts), every part named by the source | `pie` | |
+| Messages between actors over time | `sequenceDiagram` | |
+| Dates, phases | `timeline` / `gantt` | |
+
+`gitGraph` renders badly here (rotated labels, overlapping tags): use a flowchart for commits.
+
+Rules:
+
+- Always start with `accTitle:` and `accDescr:` (screen readers; the description should say what
+  the diagram shows, not repeat the labels).
+- Short labels (1–3 words, `<br/>` for a second line). The diagram illustrates the text next to it,
+  it does not replace it.
+- Charts plot only what the source states, with its wording. Never derive a complement ("the other
+  41% must be…") or relabel a figure: check the number against the linked source first.
+- Keep diagrams small: about 4–5 nodes per row, only what the paragraph argues. Phones shrink them to
+  60% then scroll horizontally; past that, use `TD` or split.
+- Check both themes and a narrow viewport in `bun run dev` before publishing.
+
+```mermaid
+flowchart LR
+  accTitle: Example
+  accDescr: A request goes through the API, which is the bottleneck, then reaches the database.
+  user[User] --> api[API]:::hl --> db[(Database)]
+```
 
 ## Playground
 

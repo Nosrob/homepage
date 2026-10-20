@@ -8,6 +8,7 @@ import 'katex/dist/katex.min.css'
 import { MediumZoom } from 'astro-pure/advanced'
 import { ArticleBottom, Hero, TOC } from 'astro-pure/components/pages'
 import Copyright from '@/components/Copyright.astro'
+import Mermaid from '@/components/Mermaid.astro'
 import PageLayout from '@/layouts/ContentLayout.astro'
 import config from 'virtual:config'
 
@@ -58,3 +59,4 @@ const primaryColor = data.heroImage?.color ?? 'hsl(var(--primary) / var(--un-tex
 </PageLayout>
 
 {config.integ.mediumZoom.enable && <MediumZoom />}
+<Mermaid />

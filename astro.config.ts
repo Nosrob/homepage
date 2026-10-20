@@ -78,6 +78,8 @@ export default defineConfig({
         }
       ]
     ],
+    // ```mermaid blocks stay raw: src/components/Mermaid.astro draws them in the browser
+    syntaxHighlight: { type: 'shiki', excludeLangs: ['math', 'mermaid'] },
     // https://docs.astro.build/en/guides/syntax-highlighting/
     shikiConfig: {
       themes: {

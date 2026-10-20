@@ -1,0 +1,232 @@
+---
+// Renders ```mermaid code blocks in posts as diagrams (client-side), redrawn on theme toggle.
+// Art direction lives in PALETTE / config below; see "Diagrams" in CLAUDE.md.
+---
+
+<style is:global>
+  .mermaid-diagram {
+    margin: 1.75rem 0;
+    overflow-x: auto;
+  }
+  .mermaid-diagram svg {
+    display: block;
+    height: auto;
+    margin-inline: auto;
+    max-width: 100%;
+  }
+  /* Pie has no size option: keep it from filling the column. */
+  .mermaid-diagram svg[aria-roledescription='pie'] {
+    max-width: min(100%, 460px) !important;
+    min-width: 0 !important;
+  }
+</style>
+
+<script>
+  const SELECTOR = 'pre > code.language-mermaid'
+
+  // Nord palette (https://www.nordtheme.com). Hex only: mermaid derives shades with khroma.
+  const PALETTE = {
+    light: {
+      ink: '#2e3440', // nord0: text
+      line: '#4c566a', // nord3: edges, arrows
+      fill: '#ffffff', // default node
+      stroke: '#81a1c1', // nord9
+      alt: '#fbf3e2', // nord13 tint: :::alt, notes
+      altStroke: '#d08770', // nord12
+      hl: '#f5e3e5', // nord11 tint: :::hl emphasis
+      hlStroke: '#bf616a', // nord11
+      muted: '#eceff4', // nord6: clusters / subgraphs
+      page: '#fcfcfd', // site background, behind edge labels
+      series: ['#5e81ac', '#bf616a', '#ebcb8b', '#a3be8c'], // charts: nord10, 11, 13, 14
+      onSeries: '#ffffff' // text on a series color
+    },
+    dark: {
+      ink: '#eceff4', // nord6
+      line: '#d8dee9', // nord4
+      fill: '#3b4252', // nord1
+      stroke: '#81a1c1', // nord9
+      alt: '#3d3527', // nord13 over the page
+      altStroke: '#ebcb8b', // nord13
+      hl: '#3f2a31', // nord11 over the page
+      hlStroke: '#bf616a', // nord11
+      muted: '#2e3440', // nord0
+      page: '#0b0b10',
+      series: ['#88c0d0', '#bf616a', '#ebcb8b', '#a3be8c'], // nord8, 11, 13, 14
+      onSeries: '#2e3440'
+    }
+  } as const
+
+  type Mode = keyof typeof PALETTE
+
+  const config = (mode: Mode) => {
+    const c = PALETTE[mode]
+    // Same face as the body text (Astro fonts: hashed family name + fallbacks).
+    const font =
+      getComputedStyle(document.documentElement).getPropertyValue('--font-satoshi').trim() ||
+      'sans-serif'
+    return {
+      startOnLoad: false,
+      securityLevel: 'strict' as const,
+      theme: 'base' as const,
+      look: 'neo' as const,
+      fontFamily: font,
+      xyChart: { width: 700, height: 320 },
+      quadrantChart: { chartWidth: 460, chartHeight: 400 },
+      // Nodes sized to their label: posts are ~740px wide, mermaid's defaults are not.
+      flowchart: {
+        minNodeWidth: 60,
+        padding: 14,
+        nodeSpacing: 30,
+        rankSpacing: 50,
+        wrappingWidth: 220,
+        curve: 'basis' as const
+      },
+      themeVariables: {
+        // neo blends border colors into a gradient: keep each node's border flat.
+        useGradient: false,
+        darkMode: mode === 'dark',
+        background: c.page,
+        fontFamily: font,
+        fontSize: '15px',
+        textColor: c.ink,
+        lineColor: c.line,
+        primaryColor: c.fill,
+        primaryBorderColor: c.stroke,
+        primaryTextColor: c.ink,
+        secondaryColor: c.alt,
+        secondaryBorderColor: c.altStroke,
+        secondaryTextColor: c.ink,
+        tertiaryColor: c.muted,
+        tertiaryBorderColor: c.line,
+        tertiaryTextColor: c.ink,
+        clusterBkg: c.muted,
+        clusterBorder: c.line,
+        noteBkgColor: c.alt,
+        noteBorderColor: c.altStroke,
+        noteTextColor: c.ink,
+        edgeLabelBackground: c.page,
+        actorBkg: c.fill,
+        actorBorder: c.stroke,
+        actorTextColor: c.ink,
+        signalColor: c.line,
+        signalTextColor: c.ink,
+        labelBoxBkgColor: c.fill,
+        labelBoxBorderColor: c.stroke,
+        labelTextColor: c.ink,
+        // Charts and graphs: Frost first, Aurora red second.
+        ...Object.fromEntries(c.series.map((color, i) => [`pie${i + 1}`, color])),
+        pieOpacity: '1',
+        pieStrokeColor: c.page,
+        pieOuterStrokeColor: c.page,
+        pieSectionTextColor: c.onSeries,
+        pieTitleTextColor: c.ink,
+        pieLegendTextColor: c.ink,
+        quadrant1Fill: c.muted,
+        quadrant2Fill: c.fill,
+        quadrant3Fill: c.muted,
+        quadrant4Fill: c.fill,
+        quadrant1TextFill: c.ink,
+        quadrant2TextFill: c.ink,
+        quadrant3TextFill: c.ink,
+        quadrant4TextFill: c.ink,
+        quadrantPointFill: c.hlStroke,
+        quadrantPointTextFill: c.ink,
+        quadrantXAxisTextFill: c.ink,
+        quadrantYAxisTextFill: c.ink,
+        quadrantTitleFill: c.ink,
+        quadrantInternalBorderStrokeFill: c.stroke,
+        quadrantExternalBorderStrokeFill: c.stroke,
+        xyChart: {
+          backgroundColor: c.page,
+          titleColor: c.ink,
+          xAxisLabelColor: c.ink,
+          xAxisTitleColor: c.ink,
+          xAxisTickColor: c.line,
+          xAxisLineColor: c.line,
+          yAxisLabelColor: c.ink,
+          yAxisTitleColor: c.ink,
+          yAxisTickColor: c.line,
+          yAxisLineColor: c.line,
+          plotColorPalette: c.series.join(',')
+        },
+        ...Object.fromEntries(c.series.map((color, i) => [`git${i}`, color])),
+        ...Object.fromEntries(c.series.map((_, i) => [`gitBranchLabel${i}`, c.onSeries])),
+        commitLabelColor: c.ink,
+        commitLabelBackground: c.muted,
+        tagLabelColor: c.ink,
+        tagLabelBackground: c.alt,
+        tagLabelBorder: c.altStroke
+      },
+      themeCSS: `
+        .node rect, .node path { rx: 8px; ry: 8px; stroke-width: 1.5px !important; }
+        .nodeLabel { font-weight: 500; }
+        .edgeLabel { font-size: 13px; color: ${c.line}; }
+      `
+    }
+  }
+
+  // `A:::hl` / `A:::alt` in flowcharts and state diagrams: emphasis that follows the theme.
+  const withClassDefs = (source: string, mode: Mode) => {
+    if (!/^\s*(flowchart|graph|stateDiagram)/.test(source)) return source
+    const c = PALETTE[mode]
+    return `${source}
+classDef hl fill:${c.hl},stroke:${c.hlStroke}
+classDef alt fill:${c.alt},stroke:${c.altStroke}`
+  }
+
+  const currentMode = (): Mode =>
+    document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+
+  let renderCount = 0
+
+  // `node` starts as the original <pre>, swapped for a diagram container on the
+  // first successful render. Any failure leaves the readable source in place.
+  type Diagram = { source: string; node: HTMLElement }
+
+  async function renderAll(diagrams: Diagram[]) {
+    const { default: mermaid } = await import('mermaid')
+    // Text is measured at layout time: wait for the body font.
+    await document.fonts.ready
+    const mode = currentMode()
+    mermaid.initialize(config(mode))
+    for (const diagram of diagrams) {
+      try {
+        const source = withClassDefs(diagram.source, mode)
+        const { svg } = await mermaid.render(`mermaid-${renderCount++}`, source)
+        if (!diagram.node.classList.contains('mermaid-diagram')) {
+          const el = document.createElement('div')
+          el.className = 'mermaid-diagram not-prose'
+          diagram.node.replaceWith(el)
+          diagram.node = el
+        }
+        diagram.node.innerHTML = svg
+        // Shrink to fit, but not below 60%: wide diagrams scroll on phones instead.
+        const svgEl = diagram.node.querySelector('svg')!
+        svgEl.style.minWidth = `${svgEl.viewBox.baseVal.width * 0.6}px`
+      } catch (error) {
+        console.error('Mermaid render failed', error)
+      }
+    }
+  }
+
+  async function init() {
+    const diagrams = [...document.querySelectorAll<HTMLElement>(SELECTOR)].map((code) => ({
+      source: code.textContent ?? '',
+      node: code.parentElement!
+    }))
+    if (!diagrams.length) return
+
+    const draw = () => renderAll(diagrams).catch((error) => console.error('Mermaid failed to load', error))
+    await draw()
+
+    // The theme toggle flips `dark` on <html>: redraw with the matching palette.
+    let mode = currentMode()
+    new MutationObserver(() => {
+      if (currentMode() === mode) return
+      mode = currentMode()
+      draw()
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+  }
+
+  init()
+</script>
