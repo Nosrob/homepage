@@ -1,4 +1,5 @@
 import { rehypeHeadingIds } from '@astrojs/markdown-remark'
+import sitemap from '@astrojs/sitemap'
 import AstroPureIntegration from 'astro-pure'
 import { defineConfig, fontProviders, svgoOptimizer } from 'astro/config'
 import rehypeKatex from 'rehype-katex'
@@ -113,8 +114,9 @@ export default defineConfig({
 
   // [Integrations]
   integrations: [
-    // astro-pure will automatically add sitemap, mdx & unocss
-    // sitemap(),
+    // astro-pure adds mdx & unocss, and a default sitemap unless one is already configured.
+    // /search is noindex (BaseHead), so it stays out of the sitemap too.
+    sitemap({ filter: (page) => !page.endsWith('/search') }),
     // mdx(),
     AstroPureIntegration(config)
   ],

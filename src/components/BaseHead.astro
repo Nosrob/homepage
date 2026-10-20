@@ -8,7 +8,7 @@ import config from 'virtual:config'
 
 type Props = PageMeta
 
-const { articleDate, modifiedDate, tags, description, ogImage, title } = Astro.props
+const { articleDate, modifiedDate, tags, noindex, description, ogImage, title } = Astro.props
 
 const siteTitle = `${title} ${config.titleDelimiter} ${config.title}`
 const canonicalURL = publicURL(Astro.url, Astro.site)
@@ -27,8 +27,9 @@ const person = {
   homeLocation: { '@type': 'Place', name: 'Lyon, France' },
   knowsAbout: [
     'Engineering management',
-    'AI-assisted software development',
+    'AI coding agents',
     'Code review',
+    'Software testing',
     'Software delivery'
   ],
   // Profiles only: drop mailto: and on-site links such as /rss.xml.
@@ -100,6 +101,7 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': grap
 <meta content={siteTitle} name='title' />
 <meta content={description} name='description' />
 <meta content={config.author} name='author' />
+{noindex && <meta name='robots' content='noindex' />}
 
 {/* Theme Color */}
 {/* <meta content='' name='theme-color' /> */}

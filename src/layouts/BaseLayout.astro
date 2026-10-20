@@ -15,7 +15,15 @@ interface Props {
 }
 
 const {
-  meta: { articleDate, modifiedDate, tags, description = config.description, ogImage, title },
+  meta: {
+    articleDate,
+    modifiedDate,
+    tags,
+    noindex,
+    description = config.description,
+    ogImage,
+    title
+  },
   highlightColor,
   ...props
 } = Astro.props
@@ -23,7 +31,7 @@ const {
 
 <html lang={config.locale.lang}>
   <head>
-    <BaseHead {articleDate} {modifiedDate} {tags} {description} {ogImage} {title} />
+    <BaseHead {articleDate} {modifiedDate} {tags} {noindex} {description} {ogImage} {title} />
     <ThemeProvider />
   </head>
 

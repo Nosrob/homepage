@@ -6,3 +6,11 @@ export function publicURL(url: URL, site: URL | undefined): URL {
   const path = url.pathname.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '')
   return new URL(path, site)
 }
+
+/** Readable name for a tag slug: `code-review` → `code review`, `ai` → `AI`. */
+export function tagLabel(tag: string): string {
+  return tag
+    .split('-')
+    .map((word) => (word === 'ai' ? 'AI' : word))
+    .join(' ')
+}

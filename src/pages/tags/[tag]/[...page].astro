@@ -7,6 +7,7 @@ import { getBlogCollection, getUniqueTags, sortMDByDate } from 'astro-pure/serve
 import { Button } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
 import config from '@/site-config'
+import { tagLabel } from '@/utils'
 
 export const prerender = true
 
@@ -31,9 +32,10 @@ interface Props {
 const { page } = Astro.props
 const { tag } = Astro.params
 
+const label = tagLabel(tag!)
 const meta = {
-  description: `View all posts with the tag - ${tag}`,
-  title: `Tag: ${tag}`
+  description: `Every post by Nicolas Borson about ${label}, from an Engineering Manager's view of how AI coding agents change software delivery.`,
+  title: `Posts about ${label}`
 }
 
 const paginationProps = {
@@ -56,10 +58,7 @@ const paginationProps = {
   <Button title='Back' href='/blog' variant='back' />
   <main class='mt-6 lg:mt-10'>
     <div id='content-header' class='animate'>
-      <h1 class='mb-6 flex items-end gap-x-2 text-3xl font-medium'>
-        Tags:
-        <span class='text-2xl'>#{tag}</span>
-      </h1>
+      <h1 class='mb-6 text-3xl font-medium'>Posts about {label}</h1>
     </div>
 
     <section id='content' class='animate' aria-label='Blog post list'>
