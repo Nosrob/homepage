@@ -27,7 +27,7 @@ Three steps, and the bot got two of them. Verify the problem it reports. Then ve
 
 Anthropic published numbers from their internal reviewer this month ([How the Claude Code team does code review](https://claude.dev/blog/solving-code-review-at-anthropic/)), and one of them explains why this matters at scale.
 
-About 59 percent of what the reviewer kept flagging in later rounds was code that was already there before the PR. Round after round, the reviewer was digging up old bugs in the surrounding code and asking the author to own them.
+About 59 percent of what the reviewer kept flagging in later rounds was code that had been there since its first pass. Round after round, the reviewer was rarely finding new bugs. It was finding a few more old ones each time, ones it could have raised on the first pass.
 
 One PR on their CLI went through more than fifty review rounds overnight before its author stopped it.
 
@@ -59,11 +59,29 @@ Which brings up the rule that Bruniaux put on one slide and that I think deserve
 
 And its sibling: a new push changes what remains to be verified. Commit A was tested and reviewed. The agent pushes a fix, now the branch is at B. A validated does not mean B validated. Before merging B, which tests must rerun, and has anyone read the diff from A to B? After every fix, rerun the tests and the reviews that the fix touched, and only those.
 
+```mermaid
+flowchart LR
+  accTitle: A validated does not mean B validated
+  accDescr: Commit A was tested and reviewed. The agent pushes a fix, which creates commit B, and B is not validated until the tests and reviews touched by the fix run again.
+  a[Commit A<br/>tested, reviewed] -- agent pushes a fix --> b[Commit B<br/>not validated]:::hl
+  b --> rerun[Rerun what<br/>the fix touched] --> merge[Merge B]
+```
+
 ## When a bot gets it wrong twice
 
 The loop closes on one more habit, and it is the cheapest one.
 
 When a reviewer makes the same mistake twice, or misses the same case twice, look at the harness around the reviewer before you look at the PR. Bruniaux's team opens a GitHub issue for it, with the exact case, the expected result and the linked PR. Then they fix the cause, which is usually one of three things: a missing regression test, an instruction that needs sharpening, or context the reviewer did not have. Then they replay the case and watch the next few PRs.
+
+```mermaid
+flowchart LR
+  accTitle: Fixing the reviewer, not the PR
+  accDescr: When the reviewer makes the same miss twice, the team files an issue with the case, fixes the cause in the reviewer's harness, replays the case and watches the next PRs. A new miss starts the loop again.
+  miss[Same miss<br/>twice]:::hl --> issue[Issue<br/>case, expected, PR]
+  issue --> cause[Fix the cause<br/>test, instruction, context]
+  cause --> replay[Replay, then watch<br/>the next PRs]
+  replay -. misses again .-> issue
+```
 
 Anthropic does the same at a larger scale. Past incident and revert PRs, confirmed by experts, form an eval set the reviewer runs against daily, and every change to the reviewer is scored against all of it. Incidents become tests for the reviewer itself.
 

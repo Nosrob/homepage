@@ -21,12 +21,18 @@ Is the work easy to verify with deterministic checks?
 
 Is a mistake cheap to undo?
 
-| Verification | Cost of undo | Level |
-|---|---|---|
-| Hard | High | 0. The agent assists, a human does the work. |
-| Hard | Low | 1. Human in the loop, the work stays a draft until someone validates it. |
-| Easy | High | 2. Delegated to the agent, with one last net before merge. |
-| Easy | Low | 3. Full autonomy. |
+```mermaid
+quadrantChart
+  accTitle: Four levels of agent autonomy
+  accDescr: Hard to verify and costly to undo, level 0, the agent assists and a human does the work. Hard to verify and cheap to undo, level 1, human in the loop, the work stays a draft until someone validates it. Easy to verify and costly to undo, level 2, delegated to the agent with one last net before merge; PostHog's Rust SQL parser sits here. Easy to verify and cheap to undo, level 3, full autonomy.
+  x-axis Hard to verify --> Easy to verify
+  y-axis Costly to undo --> Cheap to undo
+  quadrant-1 3. Full autonomy
+  quadrant-2 1. Human in the loop
+  quadrant-3 0. Agent assists
+  quadrant-4 2. Delegated, with a net
+  PostHog SQL parser: [0.8, 0.2]
+```
 
 Her example is worth keeping. PostHog rewrote their SQL parser in Rust and barely read it line by line, because a mechanical oracle existed to check the output. But the parser sits under every query on the platform, so the rollout went through a shadow mode in production and a gradual switch. Easy to verify, expensive to undo, so level 2 with a net.
 
@@ -43,6 +49,15 @@ Second because the useful classification is mostly deterministic. Which paths di
 Anthropic's Claude Code team, who now land more than 30,000 changes a day in their monorepo, sum it up in one rule ([How the Claude Code team does code review](https://claude.dev/blog/solving-code-review-at-anthropic/)): the change itself sets the risk tier, whoever wrote it.
 
 In practice, a classifier picks the tier from the diff. A second classifier checks whether a person is needed anyway. Some paths always need one: areas listed as sensitive by their owners, and any CI workflow file.
+
+```mermaid
+flowchart LR
+  accTitle: The diff sets the risk tier, not the reviewer
+  accDescr: Deterministic path rules read the diff and set the risk tier, which decides how many human approvals the PR needs. The reviewing agent reads the same diff but never sets the tier.
+  diff[Diff] --> rules[Path rules]:::hl --> tier[Risk tier] --> people[Human approvals<br/>0, 1 or 2]
+  diff --> bot[Reviewing agent]
+  bot -. never sets .-> tier
+```
 
 | Risk | Examples | Human approvals |
 |---|---|---|
@@ -67,6 +82,15 @@ Put together, the teams I have read converge on a ladder. You climb it one rung 
 **Auto-approve, human merges.** The agent review counts as an approval on low-risk PRs. A person still presses the button, which keeps ownership attached to a name. PostHog does a version of this with StampHog, a bot that approves low-risk PRs. The NextLevel case study collection on agentic code review ([source](https://agentic-code-review.netlify.app/)) covers eight organisations, and in every one of them a human still merges.
 
 **Auto-merge on a listed class.** Docs, copy, dependency bumps with green CI, additive code behind a flag. The class is written down somewhere, and nothing outside the list qualifies. Only trusted authors, in practice the owning team, get the lighter path. And the guardrail is measured: if reverts or incidents go up, the lighter path closes.
+
+```mermaid
+flowchart BT
+  accTitle: A ladder with three rungs
+  accDescr: First the agent proposes a label and the author confirms. Second, the agent approves low-risk PRs and a human merges, where most teams should stop. Third, auto-merge on a listed class of changes, which closes again if reverts or incidents rise.
+  r1[1. Agent proposes,<br/>author confirms] --> r2[2. Agent approves,<br/>human merges]:::hl
+  r2 --> r3[3. Auto-merge on<br/>a listed class]
+  r3 -. reverts or incidents rise .-> r2
+```
 
 Anthropic's post ends on something I find reassuring. They do not yet have the circuit breaker that tightens approval automatically when revert numbers rise, and their engineers want it before more code moves to zero-human merges. Even the team furthest along is not comfortable without it.
 

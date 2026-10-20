@@ -23,7 +23,25 @@ Software delivery is a chain. Specify, write, review, test, ship, observe. For t
 
 Now writing is wide, and review and testing kept their old width. The bottleneck is still there. It moved one step to the right.
 
+```mermaid
+flowchart LR
+  accTitle: The bottleneck after coding agents
+  accDescr: Writing is now cheap, so pull requests pile up in front of review and testing, which kept their old capacity, before anything ships.
+  write[Write<br/>now cheap]:::alt -- PRs pile up --> review[Review]:::hl
+  review --> test[Test]:::hl
+  test --> ship[Ship]
+```
+
 The numbers are consistent across sources that do not share an agenda. The [2025 DORA report](https://cloud.google.com/blog/products/ai-machine-learning/announcing-the-2025-dora-report) describes throughput and instability rising together, with downstream bottlenecks exposed in testing and review. Its one-line thesis is that AI amplifies what a team already is. Faros AI, which sells telemetry and therefore has a stake in the story, measured 22,000 developers and found median time in review up 441 percent, PRs merged without review up 31 percent, and incidents per PR up 243 percent between low and high adoption periods ([source](https://www.faros.ai/blog/ai-acceleration-whiplash-takeaways)). Take the exact figures with care. The direction is not in doubt.
+
+```mermaid
+xychart
+  accTitle: Faros AI, low versus high AI adoption
+  accDescr: Across 22,000 developers, median time in review rose 441 percent, PRs merged without review 31 percent, and incidents per PR 243 percent between low and high adoption periods.
+  x-axis ["Time in review", "Merged without review", "Incidents per PR"]
+  y-axis "Change, low to high adoption (%)" 0 --> 500
+  bar [441, 31, 243]
+```
 
 Anthropic's own Claude Code team went from about 2,500 changes a day in their monorepo in May to more than 30,000 in September ([source](https://claude.dev/blog/solving-code-review-at-anthropic/)). Nobody reads 30,000 changes a day.
 
@@ -40,6 +58,15 @@ When I try to explain the situation to people outside engineering, the word "bot
 **Muri** is overburden. The person at the narrow step is drowning. They review faster and worse, or they review well and fall behind on everything else.
 
 The classic trap is to treat muda by manufacturing muri. The features are waiting, so we block afternoons for testing, we ask the reviewer to go faster, we add a second reviewer who is already busy. The queue shrinks for a week and the people burn.
+
+```mermaid
+flowchart LR
+  accTitle: Treating muda by manufacturing muri
+  accDescr: Unevenness, the root cause, creates work that waits. Pushing people to clear the wait creates overburden, and since the imbalance is still there, the waiting work comes back.
+  mura[Mura<br/>unevenness]:::hl --> muda[Muda<br/>work that waits]
+  muda -- push harder --> muri[Muri<br/>overburden]:::alt
+  muri -. queue returns .-> muda
+```
 
 The other trap is quieter. When review becomes too heavy, two behaviours appear. Some people approve as soon as the automated review has nothing to say. Others keep reading seriously and get buried under everyone else's PRs. You lose on both sides, quality on one and people on the other.
 
