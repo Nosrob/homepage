@@ -3,6 +3,7 @@ import { Font } from 'astro:assets'
 
 import { prod } from 'astro-pure/server'
 import type { PageMeta } from '@/types'
+import { publicURL } from '@/utils'
 import config from 'virtual:config'
 
 type Props = PageMeta
@@ -10,9 +11,8 @@ type Props = PageMeta
 const { articleDate, modifiedDate, tags, description, ogImage, title } = Astro.props
 
 const siteTitle = `${title} ${config.titleDelimiter} ${config.title}`
-// `build.format: 'file'` renders `/about.html` and `/index.html`; the public URLs are `/about` and `/`.
-const canonicalPath = Astro.url.pathname.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '')
-const canonicalURL = new URL(canonicalPath, Astro.site)
+const canonicalURL = publicURL(Astro.url, Astro.site)
+const canonicalPath = canonicalURL.pathname
 const socialImageURL = new URL(ogImage ? ogImage : config.socialCard, Astro.url).href
 
 // Structured data: who writes here, and what each post is.
@@ -31,7 +31,8 @@ const person = {
     'Code review',
     'Software delivery'
   ],
-  sameAs: config.footer.social?.map(({ href }) => href) ?? []
+  // Profiles only: drop mailto: and on-site links such as /rss.xml.
+  sameAs: (config.footer.social ?? []).map(({ href }) => href).filter((href) => /^https?:\/\//.test(href))
 }
 const graph: Record<string, unknown>[] = [person]
 if (canonicalPath === '/') {

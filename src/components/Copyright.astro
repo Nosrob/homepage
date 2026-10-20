@@ -8,6 +8,7 @@ import config from 'virtual:config'
 import { cn, getFormattedDate } from 'astro-pure/utils'
 import { QRCode } from 'astro-pure/advanced'
 import { Icon } from 'astro-pure/user'
+import { publicURL } from '@/utils'
 
 interface Props<T extends CollectionKey> {
   data: InferEntrySchema<T>
@@ -19,16 +20,17 @@ const { title, publishDate } = data
 const heroImage = 'heroImage' in data ? data.heroImage : undefined
 
 const image = typeof heroImage?.src === 'string' ? heroImage?.src : (heroImage?.src?.src ?? '')
+const pageURL = publicURL(Astro.url, Astro.site)
 
 const shares = {
   weibo: {
-    link: `http://service.weibo.com/share/share.php?url=${Astro.url}&title=${title}&pic=${image}`
+    link: `http://service.weibo.com/share/share.php?url=${pageURL}&title=${title}&pic=${image}`
   },
   x: {
-    link: `https://x.com/intent/tweet?text='${title}'&url='${Astro.url}'&via='${config.author}'`
+    link: `https://x.com/intent/tweet?text='${title}'&url='${pageURL}'&via='${config.author}'`
   },
   bluesky: {
-    link: `https://bsky.app/intent/compose?text=${title}%0A${Astro.url}`
+    link: `https://bsky.app/intent/compose?text=${title}%0A${pageURL}`
   }
 } as const
 ---
@@ -44,7 +46,7 @@ const shares = {
   {/* title & link */}
   <div class='flex flex-col'>
     <div class='font-medium text-foreground'>{title}</div>
-    <div class='text-sm line-clamp-1'>{Astro.url}</div>
+    <div class='text-sm line-clamp-1'>{pageURL}</div>
   </div>
 
   {/* common info */}
