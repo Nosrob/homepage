@@ -23,6 +23,7 @@ Context and guidelines for Claude when working in this repo.
 | `src/assets/avatar.jpg` | Profile picture (homepage); `public/images/social-card.jpg` is cut from the same photo |
 | `public/favicon/favicon.svg` | "NB" monogram; the PNGs next to it are rasterized from it (16/32/180/192/512) |
 | `src/components/Mermaid.astro` | Draws ```` ```mermaid ```` blocks in posts: neo look, Nord palette, light/dark |
+| `skills/borson-writer/` | Writing skill for posts (voice, sourcing, diagrams); symlinked into `~/.agents/skills` and `~/.claude/skills` so it works from any directory |
 
 ## Adding a blog post
 
