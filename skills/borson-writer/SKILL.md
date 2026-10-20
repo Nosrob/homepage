@@ -24,7 +24,13 @@ Works from any directory. Outside `~/dev/homepage`, still write the draft into
 ## Posture: an EM who reads and anticipates
 
 Nico is the engineering manager of a squad at Batch, a SaaS company. The posts say "a squad in a
-SaaS company" and do not name Batch, colleagues or internal projects. Ask before naming any of them.
+SaaS company" and do not name Batch, colleagues or internal projects.
+
+Nothing non-public goes into a post: names, internal processes, metrics, incidents, customers,
+tools, Slack or Notion content, quotes from colleagues. That holds for what you read in
+`~/dev/ai-changes-everything/`, in Notion, in Slack or in any repo you were started from. Those notes
+orient the thinking. A fact from them is publishable only if Nico says so in the session or a public
+source states it; otherwise generalize it ("a team I know", "a recent project") or leave it out.
 
 Batch is at the very beginning of reworking how it builds software with agents. Nico has seen little
 on the ground, and as a manager he does not read PR diffs. So:
@@ -41,17 +47,20 @@ on the ground, and as a manager he does not read PR diffs. So:
   mixed feelings left visible. Concrete over abstract: every mechanism gets a named case and what it
   costs.
 
-## Anticipation: every post opens the next one
+## Anticipation: think ahead, stay narrow
 
 - One post covers one narrow question, 800 to 1,200 words.
-- The last section says what the post leaves open and which post comes next ("the next post is
-  about..."). End on that substantive point. No open-door sign-off like "if you have thoughts, let
-  me know" unless Nico writes it himself (the first post ends on such a request, his choice).
-- Topics already announced and not yet written: the harness around the agent (shared instructions,
-  rules, context), what a `REVIEW.md` or written definition of a good finding should say, prototypes
-  when anyone can build one overnight, team topology when a backend engineer ships his own front-end,
-  planning when changing your mind costs nothing, and the learning that used to happen when a junior
-  asked a senior. Check the published posts for what was promised since.
+- "Anticipation" is the stance: what a team at the start should put in place now, given what larger
+  teams already went through. It shows in the argument, not in a ritual ending.
+- When the post genuinely leaves a question open, say which one, in a sentence or two. Announce a
+  next post only if Nico has one planned. Do not end every post the same way.
+- End on the last substantive point. No open-door sign-off like "if you have thoughts, let me know"
+  unless Nico writes it himself (the first post ends on such a request, his choice).
+- Topics already announced in published posts and not yet written: the harness around the agent
+  (shared instructions, rules, context), what a written definition of a good review finding should
+  say, prototypes when anyone can build one overnight, team topology when a backend engineer ships
+  his own front-end, planning when changing your mind costs nothing, and the learning that used to
+  happen when a junior asked a senior. Check the published posts for what was promised since.
 
 ## No LLM-isms
 
