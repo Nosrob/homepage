@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quête de la Princesse - De la forêt au château</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Trebuchet MS', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    height: 100dvh;
+    user-select: none;
+    background: #A8E4F7;
+  }
+
+  #game {
+    position: relative;
+    width: 100vw;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* ── Paysage ─────────────────────────────────────── */
+  .sky {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 58%;
+    background: linear-gradient(180deg, #5BC8F5 0%, #A8E4F7 55%, #E8F8FF 100%);
+  }
+
+  .meadow {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 48%;
+    background: linear-gradient(180deg, #7EC850 0%, #5BAB30 50%, #4A9020 100%);
+  }
+
+  .hill {
+    position: absolute;
+    bottom: 44%;
+    background: #7EC850;
+    border-radius: 50%;
+  }
+
+  .clouds {
+    position: absolute;
+    top: 0; left: 0;
+    width: 200%; height: 55%;
+    pointer-events: none;
+    animation: scroll-clouds 50s linear infinite;
+  }
+
+  .clouds.fast    { animation-duration: 6s; }
+  .clouds.stopped { animation-play-state: paused; }
+
+  .cloud {
+    position: absolute;
+    background: white;
+    border-radius: 50px;
+    opacity: 0.9;
+    box-shadow: 0 4px 20px rgba(255,255,255,0.4);
+  }
+
+  @keyframes scroll-clouds {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  .flower {
+    position: absolute;
+    font-size: 22px;
+    z-index: 1;
+    animation: sway 3s ease-in-out infinite alternate;
+  }
+
+  @keyframes sway {
+    from { transform: rotate(-6deg); }
+    to   { transform: rotate(6deg); }
+  }
+
+  /* ── Chemin ──────────────────────────────────────── */
+  .path {
+    position: absolute;
+    top: 53%;
+    left: 5%; right: 5%;
+    height: 14px;
+    background: linear-gradient(90deg, #C8A060, #B08040, #C8A060);
+    border-radius: 7px;
+    z-index: 2;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+  }
+
+  .progress-dots {
+    position: absolute;
+    top: 53%;
+    left: 5%; right: 5%;
+    height: 14px;
+    z-index: 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  .dot {
+    width: 10px; height: 10px;
+    background: rgba(255,255,255,0.35);
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.55);
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+
+  .dot.reached {
+    background: #FFD700;
+    border-color: #FFA500;
+    box-shadow: 0 0 8px #FFD700;
+  }
+
+  /* ── HUD ─────────────────────────────────────────── */
+  .hud {
+    position: absolute;
+    top: 15px; left: 0; right: 0;
+    display: flex;
+    justify-content: space-around;
+    gap: 6px;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .hud-item {
+    background: rgba(255, 235, 248, 0.92);
+    border: 2px solid #CC3399;
+    border-radius: 10px;
+    padding: 8px 18px;
+    font-size: 1.1em;
+    color: #7A005A;
+    font-weight: bold;
+    box-shadow: 0 3px 12px rgba(204,51,153,0.2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Lieux et princesse ──────────────────────────── */
+  .forest {
+    position: absolute;
+    top: 50%; left: 1%;
+    transform: translateY(-62%);
+    font-size: 40px;
+    line-height: 0.8;
+    text-align: center;
+    z-index: 3;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+  }
+
+  .destination {
+    position: absolute;
+    top: 50%; right: 2%;
+    transform: translateY(-55%);
+    font-size: 62px;
+    line-height: 1;
+    z-index: 3;
+    filter: drop-shadow(0 0 18px #ff69b4);
+    animation: gentle-float 5s ease-in-out infinite;
+  }
+
+  @keyframes gentle-float {
+    0%, 100% { transform: translateY(-55%) scale(1); }
+    50%       { transform: translateY(-58%) scale(1.04); }
+  }
+
+  .place-label {
+    position: absolute;
+    top: calc(53% + 24px);
+    font-size: 0.8em;
+    font-weight: bold;
+    color: #5A003A;
+    text-shadow: 1px 1px 0 rgba(255,255,255,0.7);
+    z-index: 3;
+    max-width: 30%;
+  }
+
+  .label-start { left: 2%; }
+  .label-dest  { right: 2%; text-align: right; }
+
+  .princess {
+    position: absolute;
+    top: 50%; left: 8%;
+    transform: translateY(-55%);
+    font-size: 50px;
+    z-index: 5;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+    transition: left 0.7s cubic-bezier(0.34, 1.2, 0.64, 1);
+    line-height: 1;
+  }
+
+  .princess.advance { animation: skip 0.7s ease-out; }
+  .princess.stumble { animation: stumble 1.8s ease-in forwards; }
+
+  @keyframes skip {
+    0%   { transform: translateY(-55%) scale(1); }
+    25%  { transform: translateY(-80%) scale(1.15) rotate(-8deg); }
+    60%  { transform: translateY(-58%) scale(1.05) rotate(2deg); }
+    100% { transform: translateY(-55%) scale(1); }
+  }
+
+  @keyframes stumble {
+    0%   { transform: translateY(-55%) rotate(0) scale(1); opacity: 1; }
+    30%  { transform: translateY(-55%) rotate(30deg) scale(0.9); opacity: 0.9; }
+    70%  { transform: translateY(-40%) rotate(-15deg) scale(0.75); opacity: 0.7; }
+    100% { transform: translateY(20%) rotate(50deg) scale(0.2); opacity: 0; }
+  }
+
+  .stumble-effect {
+    position: absolute;
+    top: 50%;
+    font-size: 55px;
+    opacity: 0;
+    z-index: 6;
+    pointer-events: none;
+    transform: translateY(-55%);
+  }
+
+  .stumble-effect.boom { animation: poof 1.5s ease-out forwards; }
+
+  @keyframes poof {
+    0%   { opacity: 0; transform: translateY(-55%) scale(0.3); }
+    30%  { opacity: 1; transform: translateY(-55%) scale(1.6); }
+    100% { opacity: 0; transform: translateY(-55%) scale(2.8); }
+  }
+
+  /* ── Question ────────────────────────────────────── */
+  .question-box {
+    position: absolute;
+    top: 14%; left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 10;
+    width: max-content;
+    max-width: 100%;
+  }
+
+  .question {
+    font-size: 4.5em;
+    font-weight: bold;
+    color: #5A003A;
+    text-shadow: 2px 2px 0 #F8BBD9, 0 0 30px rgba(204,51,153,0.3);
+    margin-bottom: 18px;
+  }
+
+  .answer-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .answer-input {
+    width: 200px; height: 75px;
+    font-size: 2.8em;
+    text-align: center;
+    background: rgba(255, 240, 250, 0.95);
+    border: 3px solid #CC3399;
+    border-radius: 15px;
+    color: #5A003A;
+    outline: none;
+    box-shadow: 0 0 20px rgba(204,51,153,0.25), 0 4px 15px rgba(0,0,0,0.08);
+    font-family: inherit;
+    font-weight: bold;
+  }
+
+  .answer-input:focus {
+    border-color: #9900CC;
+    box-shadow: 0 0 30px rgba(153,0,204,0.45);
+  }
+
+  .ok-btn {
+    height: 75px;
+    padding: 0 22px;
+    font-size: 1.6em;
+    font-weight: bold;
+    font-family: inherit;
+    color: #fff;
+    background: linear-gradient(135deg, #CC3399, #9900CC);
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(204,51,153,0.4);
+  }
+
+  .hint {
+    margin-top: 12px;
+    font-size: 1em;
+    color: #7A005A;
+    opacity: 0.8;
+    font-weight: bold;
+  }
+
+  .hint.continue-hint {
+    color: #CC3399;
+    opacity: 1;
+    animation: hint-blink 1s ease-in-out infinite alternate;
+  }
+
+  @keyframes hint-blink {
+    from { opacity: 0.55; }
+    to   { opacity: 1; }
+  }
+
+  /* ── Feedback ────────────────────────────────────── */
+  .feedback {
+    position: absolute;
+    top: 72%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.4em;
+    font-weight: bold;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 20;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .feedback.show-success {
+    animation: pop-success 1.2s ease-out;
+    color: #1B5E20;
+    text-shadow: 0 0 15px #4CAF50, 2px 2px 0 #A5D6A7;
+  }
+
+  .feedback.show-fail-persist {
+    opacity: 1;
+    color: #880000;
+    text-shadow: 0 0 15px #F44336, 2px 2px 0 #fff;
+    animation: pop-fail-stay 0.6s ease-out;
+  }
+
+  @keyframes pop-success {
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.5); }
+    30%  { opacity: 1; transform: translate(-50%,-50%) scale(1.3); }
+    70%  { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(1); }
+  }
+
+  @keyframes pop-fail-stay {
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.4); }
+    50%  { opacity: 1; transform: translate(-50%,-50%) scale(1.25) rotate(-2deg); }
+    100% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+  }
+
+  /* ── Timer par réponse ───────────────────────────── */
+  .timer-bar {
+    position: absolute;
+    top: 68px; left: 50%;
+    transform: translateX(-50%);
+    width: 320px; height: 12px;
+    background: rgba(255, 230, 245, 0.8);
+    border: 2px solid #CC3399;
+    border-radius: 8px;
+    overflow: hidden;
+    z-index: 10;
+    display: none;
+    box-shadow: 0 2px 10px rgba(204,51,153,0.2);
+  }
+
+  .timer-bar.active { display: block; }
+
+  .timer-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #F48FB1, #CC3399);
+    transition: width 0.1s linear;
+  }
+
+  .timer-fill.warning { background: linear-gradient(90deg, #FFB74D, #FF9800); }
+
+  .timer-fill.danger {
+    background: linear-gradient(90deg, #EF5350, #B71C1C);
+    animation: pulse-danger 0.4s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-danger {
+    from { box-shadow: 0 0 5px #F44336; }
+    to   { box-shadow: 0 0 20px #F44336; }
+  }
+
+  /* ── Écrans démarrage / fin ──────────────────────── */
+  .start-screen, .end-screen {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 235, 248, 0.96);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    z-index: 100;
+    padding: 20px 16px;
+    overflow-y: auto;
+  }
+
+  .start-screen.show, .end-screen.show { display: flex; }
+
+  /* margin auto : centré quand ça tient, défilable sinon */
+  .screen-inner {
+    margin: auto 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 640px;
+  }
+
+  .start-screen h1 {
+    font-size: 2.8em;
+    margin-bottom: 8px;
+    color: #6A0050;
+    text-shadow: 2px 2px 0 #F8BBD9;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 1.15em;
+    margin: 18px 0 12px;
+    color: #7A005A;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .dest-selector {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .dest-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 96px;
+    padding: 8px 6px;
+    background: rgba(255, 210, 235, 0.6);
+    border: 3px solid rgba(204, 51, 153, 0.3);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    color: #6A0050;
+  }
+
+  .dest-option:hover { border-color: #CC3399; transform: translateY(-3px); }
+
+  .dest-option.selected {
+    border-color: #CC3399;
+    background: rgba(255, 180, 220, 0.9);
+    box-shadow: 0 0 16px rgba(204, 51, 153, 0.45);
+  }
+
+  .dest-option .d-emoji { font-size: 38px; line-height: 1.2; }
+  .dest-option .d-name  { font-size: 0.72em; font-weight: bold; text-align: center; }
+
+  .chips {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .chip input { position: absolute; opacity: 0; pointer-events: none; }
+
+  .chip label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 70px;
+    height: 56px;
+    padding: 0 16px;
+    background: rgba(255, 210, 235, 0.6);
+    border: 3px solid #CC3399;
+    border-radius: 14px;
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #6A0050;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .chip label:hover { transform: translateY(-3px); }
+
+  .chip input:checked + label {
+    background: linear-gradient(135deg, #CC3399, #9900CC);
+    color: #fff;
+    box-shadow: 0 0 18px rgba(204, 51, 153, 0.5);
+  }
+
+  .chip input:focus-visible + label { outline: 3px solid #9900CC; outline-offset: 2px; }
+
+  .option-toggle {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 12px 20px;
+    background: rgba(255, 210, 235, 0.6);
+    border: 2px solid #CC3399;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.1em;
+    color: #6A0050;
+    font-weight: bold;
+    max-width: 500px;
+    width: 100%;
+  }
+
+  .option-toggle input[type="checkbox"] {
+    width: 22px; height: 22px;
+    cursor: pointer;
+    accent-color: #CC3399;
+    flex-shrink: 0;
+  }
+
+  .option-number {
+    width: 58px; height: 34px;
+    font-size: 1em;
+    text-align: center;
+    background: rgba(255, 245, 252, 0.95);
+    border: 2px solid #CC3399;
+    border-radius: 6px;
+    color: #6A0050;
+    outline: none;
+    font-family: inherit;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  .option-number:focus { border-color: #9900CC; }
+
+  .start-btn, .restart-btn {
+    padding: 16px 48px;
+    font-size: 1.5em;
+    background: linear-gradient(135deg, #CC3399, #9900CC);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 20px rgba(204,51,153,0.45);
+    font-family: inherit;
+    margin-top: 18px;
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  .start-btn:hover:not(:disabled), .restart-btn:hover {
+    background: linear-gradient(135deg, #AA2277, #7700AA);
+    transform: scale(1.05);
+  }
+
+  .start-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+  .best-line {
+    margin-top: 14px;
+    font-size: 1.05em;
+    font-weight: bold;
+    color: #B8860B;
+    min-height: 1.4em;
+    text-align: center;
+  }
+
+  .end-screen h1 {
+    font-size: 2.8em;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #1B5E20;
+    text-shadow: 2px 2px 0 #C8E6C9;
+  }
+
+  .end-screen p {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #6A0050;
+  }
+
+  .new-record {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #B8860B;
+    text-shadow: 0 0 12px #FFD700;
+    margin-bottom: 15px;
+    animation: record-pulse 1s ease-in-out infinite alternate;
+  }
+
+  @keyframes record-pulse { from { transform: scale(1); } to { transform: scale(1.08); } }
+
+  .scores-title { font-size: 0.95em; color: #6A0050; opacity: 0.85; margin-bottom: 6px; text-align: center; }
+
+  .scores {
+    list-style: none;
+    padding: 12px 22px;
+    background: rgba(255, 210, 235, 0.6);
+    border: 2px solid #CC3399;
+    border-radius: 10px;
+    min-width: 260px;
+    color: #6A0050;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .scores li { display: flex; justify-content: space-between; gap: 20px; padding: 3px 0; }
+  .scores li.current { color: #9900CC; font-weight: bold; }
+  .scores .s-fall { opacity: 0.75; font-size: 0.85em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .new-record, .flower, .destination, .clouds { animation: none; }
+  }
+
+  @media (max-width: 700px) {
+    .question      { font-size: 3.2em; }
+    .answer-input  { width: 130px; height: 60px; font-size: 2em; }
+    .ok-btn        { height: 60px; font-size: 1.3em; padding: 0 16px; }
+    .princess      { font-size: 36px; }
+    .destination   { font-size: 44px; }
+    .forest        { font-size: 28px; }
+    .hud-item      { font-size: 0.85em; padding: 6px 8px; }
+    .start-screen h1, .end-screen h1 { font-size: 1.8em; }
+    .timer-bar     { width: 80%; top: 62px; }
+    .question-box  { top: 11%; }
+    .dest-option   { width: 84px; }
+    .chip label    { min-width: 56px; height: 48px; font-size: 1.1em; padding: 0 12px; }
+  }
+</style>
+</head>
+<body>
+<div id="game">
+
+  <div class="sky"></div>
+  <div class="meadow"></div>
+
+  <div class="hill" style="width:500px;height:180px;left:-80px;bottom:42%"></div>
+  <div class="hill" style="width:380px;height:140px;left:30%;bottom:43%"></div>
+  <div class="hill" style="width:450px;height:160px;right:-60px;bottom:42%"></div>
+
+  <div class="clouds" id="clouds">
+    <div class="cloud" style="width:130px;height:42px;top:7%;left:4%"></div>
+    <div class="cloud" style="width:85px;height:30px;top:13%;left:13%"></div>
+    <div class="cloud" style="width:160px;height:50px;top:5%;left:26%"></div>
+    <div class="cloud" style="width:110px;height:38px;top:17%;left:42%"></div>
+    <div class="cloud" style="width:140px;height:44px;top:9%;left:58%"></div>
+    <div class="cloud" style="width:95px;height:32px;top:14%;left:72%"></div>
+    <div class="cloud" style="width:170px;height:52px;top:4%;left:84%"></div>
+    <!-- doublons pour boucle infinie -->
+    <div class="cloud" style="width:130px;height:42px;top:7%;left:104%"></div>
+    <div class="cloud" style="width:85px;height:30px;top:13%;left:113%"></div>
+    <div class="cloud" style="width:160px;height:50px;top:5%;left:126%"></div>
+    <div class="cloud" style="width:110px;height:38px;top:17%;left:142%"></div>
+    <div class="cloud" style="width:140px;height:44px;top:9%;left:158%"></div>
+    <div class="cloud" style="width:95px;height:32px;top:14%;left:172%"></div>
+    <div class="cloud" style="width:170px;height:52px;top:4%;left:184%"></div>
+  </div>
+
+  <div class="flower" style="bottom:11%;left:12%;animation-delay:0s">🌸</div>
+  <div class="flower" style="bottom:8%;left:22%;animation-delay:0.6s">🌼</div>
+  <div class="flower" style="bottom:12%;left:35%;animation-delay:1.1s">🌺</div>
+  <div class="flower" style="bottom:9%;left:48%;animation-delay:0.3s">🌸</div>
+  <div class="flower" style="bottom:11%;left:60%;animation-delay:0.9s">🌼</div>
+  <div class="flower" style="bottom:7%;left:73%;animation-delay:1.4s">🌺</div>
+  <div class="flower" style="bottom:10%;left:84%;animation-delay:0.5s">🌸</div>
+
+  <div class="hud">
+    <div class="hud-item">💔 Chutes : <span id="falls">0</span></div>
+    <div class="hud-item">👟 <span id="distance">0</span>/<span id="maxDistance">15</span></div>
+    <div class="hud-item">⏱ <span id="chrono">0:00.0</span></div>
+  </div>
+
+  <div class="timer-bar" id="timerBar"><div class="timer-fill" id="timerFill"></div></div>
+
+  <div class="question-box" id="questionBox">
+    <div class="question" id="question">7 + 5</div>
+    <div class="answer-row">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" class="answer-input" id="answer" autocomplete="off" aria-label="Ta réponse">
+      <button type="button" class="ok-btn" id="okBtn">OK</button>
+    </div>
+    <div class="hint" id="hint">Tape la réponse et appuie sur Entrée</div>
+  </div>
+
+  <div class="feedback" id="feedback" aria-live="polite"></div>
+
+  <div class="path"></div>
+  <div class="progress-dots" id="dots"></div>
+
+  <div class="forest" aria-hidden="true">🌲🌳<br>🌳🌲</div>
+  <div class="place-label label-start">LA FORÊT</div>
+  <div class="destination" id="destEl">🏰</div>
+  <div class="place-label label-dest" id="destLabel">LE CHÂTEAU</div>
+
+  <div class="princess" id="princess">👸</div>
+  <div class="stumble-effect" id="stumbleEffect">✨</div>
+
+  <div class="start-screen show" id="startScreen">
+    <div class="screen-inner">
+      <h1>👸 Quête de la Princesse</h1>
+      <p class="subtitle">Où va la princesse ?</p>
+      <div class="dest-selector" id="destSelector"></div>
+
+      <p class="subtitle">Quels calculs ?</p>
+      <div class="chips" id="opsChips">
+        <div class="chip"><input type="checkbox" id="op-add" value="+" checked><label for="op-add">+ Additions</label></div>
+        <div class="chip"><input type="checkbox" id="op-sub" value="-" checked><label for="op-sub">− Soustractions</label></div>
+      </div>
+
+      <p class="subtitle">Résultats jusqu'à</p>
+      <div class="chips" id="rangeChips"></div>
+
+      <label class="option-toggle">
+        <input type="checkbox" id="timerCheckbox">
+        <span>⏱ Mode chrono :</span>
+        <input type="number" class="option-number" id="timerSecondsInput" value="10" min="3" max="99">
+        <span>sec par réponse</span>
+      </label>
+      <div class="option-toggle" style="cursor:default;">
+        <span id="stepsLabel">👟 Pas avant le château :</span>
+        <input type="number" class="option-number" id="stepsInput" value="15" min="1" max="99">
+      </div>
+
+      <button class="start-btn" id="startBtn" type="button">C'est parti ! 🌟</button>
+      <div class="best-line" id="bestLine"></div>
+    </div>
+  </div>
+
+  <div class="end-screen" id="endScreen">
+    <div class="screen-inner">
+      <h1 id="endTitle"></h1>
+      <p id="endMessage"></p>
+      <div class="new-record" id="newRecord" hidden>🏆 NOUVEAU RECORD !</div>
+      <div id="scoresWrap" hidden>
+        <div class="scores-title">Meilleurs temps pour cette quête</div>
+        <ol class="scores" id="scoresList"></ol>
+      </div>
+      <button class="restart-btn" id="restartBtn" type="button">Nouvelle quête ✨</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const DESTINATIONS = [
+    { id: 'chateau', emoji: '🏰', name: 'LE CHÂTEAU',            the: 'le château',             to: 'AU CHÂTEAU',              glow: '#ff69b4' },
+    { id: 'glace',   emoji: '🏔️', name: 'LE PALAIS DE GLACE',    the: 'le palais de glace',     to: 'AU PALAIS DE GLACE',      glow: '#5fd4ff' },
+    { id: 'arcenciel', emoji: '🌈', name: 'LE ROYAUME ARC-EN-CIEL', the: 'le royaume arc-en-ciel', to: 'AU ROYAUME ARC-EN-CIEL',  glow: '#ffd700' },
+    { id: 'licornes', emoji: '🦄', name: 'LA VALLÉE DES LICORNES', the: 'la vallée des licornes', to: 'À LA VALLÉE DES LICORNES', glow: '#d58cff' },
+    { id: 'fees',    emoji: '🧚', name: 'LE PAYS DES FÉES',       the: 'le pays des fées',       to: 'AU PAYS DES FÉES',        glow: '#7dffb0' },
+    { id: 'dragon',  emoji: '🐉', name: 'LA GROTTE DU DRAGON',    the: 'la grotte du dragon',    to: 'À LA GROTTE DU DRAGON',   glow: '#ff7043' },
+  ];
+
+  const RANGES = [10, 20, 50, 100];
+
+  const START_POS = 8;
+  const END_POS   = 87;
+  const HINT_TEXT = 'Tape la réponse et appuie sur Entrée';
+
+  let selectedDest = DESTINATIONS[0];
+  let selectedOps = [];
+  let maxNumber = 20;
+  let falls = 0;
+  let distance = 0;
+  let maxDistance = 15;
+  let timerDuration = 10;
+  let timerEnabled = false;
+  let current = { a: 0, b: 0, op: '+' };
+  let isLocked = false;
+  let waitingForContinue = false;
+  let timerStart = 0, timerRafId = null;
+  let missionStart = 0, missionTime = 0, chronoRafId = null;
+  let feedbackTimeout = null;
+
+  const $ = (id) => document.getElementById(id);
+  const startScreen   = $('startScreen');
+  const endScreen     = $('endScreen');
+  const questionBox   = $('questionBox');
+  const questionEl    = $('question');
+  const answerEl      = $('answer');
+  const fallsEl       = $('falls');
+  const distanceEl    = $('distance');
+  const maxDistanceEl = $('maxDistance');
+  const princessEl    = $('princess');
+  const stumbleEl     = $('stumbleEffect');
+  const feedbackEl    = $('feedback');
+  const dotsContainer = $('dots');
+  const hintEl        = $('hint');
+  const timerBar      = $('timerBar');
+  const timerFill     = $('timerFill');
+  const cloudsEl      = $('clouds');
+  const chronoEl      = $('chrono');
+  const startBtn      = $('startBtn');
+  const destSelector  = $('destSelector');
+  const rangeChips    = $('rangeChips');
+
+  // ── Utilitaires ──
+  const randInt = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
+  const plural = (n, word) => n + ' ' + word + (n > 1 ? 's' : '');
+
+  function formatTime(ms) {
+    const tenths = Math.floor(ms / 100);
+    const min = Math.floor(tenths / 600);
+    const sec = Math.floor((tenths % 600) / 10);
+    return min + ':' + String(sec).padStart(2, '0') + '.' + (tenths % 10);
+  }
+
+  // ── Écran de départ ──
+  DESTINATIONS.forEach((d, i) => {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'dest-option' + (i === 0 ? ' selected' : '');
+    el.innerHTML = '<span class="d-emoji">' + d.emoji + '</span><span class="d-name">' + d.name + '</span>';
+    el.addEventListener('click', () => {
+      destSelector.querySelectorAll('.dest-option').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedDest = d;
+      $('stepsLabel').textContent = '👟 Pas avant ' + d.the + ' :';
+      updateBestLine();
+    });
+    destSelector.appendChild(el);
+  });
+
+  RANGES.forEach(n => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.innerHTML = '<input type="radio" name="range" id="range-' + n + '" value="' + n + '"' + (n === 20 ? ' checked' : '') + '>'
+      + '<label for="range-' + n + '">' + n + '</label>';
+    rangeChips.appendChild(chip);
+  });
+
+  function getOps() {
+    return Array.from(document.querySelectorAll('#opsChips input:checked')).map(el => el.value);
+  }
+
+  function getRange() {
+    return parseInt(document.querySelector('#rangeChips input:checked').value, 10);
+  }
+
+  function readSettings() {
+    const clamp = (v, min, max, def) => Math.min(max, Math.max(min, parseInt(v, 10) || def));
+    return {
+      ops: getOps(),
+      range: getRange(),
+      timerOn: $('timerCheckbox').checked,
+      timerSec: clamp($('timerSecondsInput').value, 3, 99, 10),
+      steps: clamp($('stepsInput').value, 1, 99, 15),
+    };
+  }
+
+  // ── Meilleurs scores (stockés dans ce navigateur) ──
+  const SCORES_KEY = 'quete-princesse:scores:v1';
+  const SCORES_KEPT = 5;
+
+  function loadScores() {
+    try { return JSON.parse(localStorage.getItem(SCORES_KEY)) || {}; }
+    catch (e) { return {}; }
+  }
+
+  function saveScores(all) {
+    try { localStorage.setItem(SCORES_KEY, JSON.stringify(all)); } catch (e) { /* stockage indisponible */ }
+  }
+
+  // Une quête = destination + calculs + plage + pas + mode chrono : seuls les temps d'une même quête se comparent
+  function questKey(dest, ops, range, steps, timerSec) {
+    return [dest.id, ops.slice().sort().join(''), range, steps, timerSec || 0].join('|');
+  }
+
+  function recordScore(key, time, fallCount) {
+    const all = loadScores();
+    const list = all[key] || [];
+    const entry = { time: Math.round(time), falls: fallCount, date: new Date().toISOString().slice(0, 10) };
+    list.push(entry);
+    list.sort((a, b) => a.time - b.time || a.falls - b.falls);
+    all[key] = list.slice(0, SCORES_KEPT);
+    saveScores(all);
+    return { list: all[key], rank: all[key].indexOf(entry) };
+  }
+
+  function updateBestLine() {
+    const s = readSettings();
+    const el = $('bestLine');
+    startBtn.disabled = s.ops.length === 0;
+    if (s.ops.length === 0) { el.textContent = 'Choisis au moins un type de calcul'; return; }
+    const best = (loadScores()[questKey(selectedDest, s.ops, s.range, s.steps, s.timerOn ? s.timerSec : 0)] || [])[0];
+    el.textContent = best
+      ? '🏆 Record pour cette quête : ' + formatTime(best.time) + (best.falls ? ' (' + plural(best.falls, 'chute') + ')' : '')
+      : 'Pas encore de record pour cette quête';
+  }
+
+  document.querySelectorAll('#startScreen input').forEach(el => {
+    el.addEventListener('input', updateBestLine);
+    el.addEventListener('change', updateBestLine);
+  });
+
+  // ── Chronomètre de quête ──
+  function startChrono() {
+    stopChrono();
+    missionStart = performance.now();
+    const tick = (now) => {
+      chronoEl.textContent = formatTime(now - missionStart);
+      chronoRafId = requestAnimationFrame(tick);
+    };
+    chronoRafId = requestAnimationFrame(tick);
+  }
+
+  function stopChrono() {
+    if (chronoRafId !== null) { cancelAnimationFrame(chronoRafId); chronoRafId = null; }
+  }
+
+  // ── Timer par réponse ──
+  function stopTimer() {
+    if (timerRafId !== null) { cancelAnimationFrame(timerRafId); timerRafId = null; }
+    timerBar.classList.remove('active');
+  }
+
+  function startTimer() {
+    if (!timerEnabled) return;
+    timerStart = performance.now();
+    timerBar.classList.add('active');
+    timerFill.classList.remove('warning', 'danger');
+    timerFill.style.width = '100%';
+
+    const tick = (now) => {
+      const remaining = timerDuration - (now - timerStart) / 1000;
+      if (remaining <= 0) {
+        timerFill.style.width = '0%';
+        timerRafId = null;
+        if (!isLocked) {
+          isLocked = true;
+          showFeedback('⏰ Trop tard ! ' + formatQuestion(current) + ' = ' + answerOf(current), 'fail', true);
+          fall();
+        }
+        return;
+      }
+      const ratio = remaining / timerDuration;
+      timerFill.style.width = (ratio * 100) + '%';
+      if      (ratio < 0.25) { timerFill.classList.add('danger');  timerFill.classList.remove('warning'); }
+      else if (ratio < 0.5)  { timerFill.classList.add('warning'); timerFill.classList.remove('danger');  }
+      else                   { timerFill.classList.remove('warning', 'danger'); }
+      timerRafId = requestAnimationFrame(tick);
+    };
+    timerRafId = requestAnimationFrame(tick);
+  }
+
+  // ── Questions ──
+  // Résultat (addition) ou premier nombre (soustraction) tiré dans le haut de la plage,
+  // pour éviter trop de calculs triviaux. Jamais de résultat négatif ni de « - 0 ».
+  function makeQuestion() {
+    const op = selectedOps[Math.floor(Math.random() * selectedOps.length)];
+    const low = Math.max(3, Math.floor(maxNumber * 0.3));
+    let a, b;
+    if (op === '+') {
+      const sum = randInt(low, maxNumber);
+      a = randInt(1, sum - 1);
+      b = sum - a;
+    } else {
+      a = randInt(low, maxNumber);
+      b = randInt(1, a - 1);
+    }
+    return { a, b, op };
+  }
+
+  const answerOf = (q) => q.op === '+' ? q.a + q.b : q.a - q.b;
+  const formatQuestion = (q) => q.a + (q.op === '+' ? ' + ' : ' − ') + q.b;
+
+  function newQuestion() {
+    let q;
+    do { q = makeQuestion(); }
+    while (q.a === current.a && q.b === current.b && q.op === current.op);
+    current = q;
+    questionEl.textContent = formatQuestion(q);
+    answerEl.value = '';
+    answerEl.focus();
+    isLocked = false;
+    startTimer();
+  }
+
+  // ── Déroulé ──
+  function updatePosition() {
+    princessEl.style.left = (START_POS + (END_POS - START_POS) * (distance / maxDistance)) + '%';
+  }
+
+  function updateDots() {
+    dotsContainer.querySelectorAll('.dot').forEach((dot, i) => dot.classList.toggle('reached', i <= distance));
+  }
+
+  function startGame() {
+    const s = readSettings();
+    if (s.ops.length === 0) return;
+    selectedOps   = s.ops;
+    maxNumber     = s.range;
+    timerEnabled  = s.timerOn;
+    timerDuration = s.timerSec;
+    maxDistance   = s.steps;
+
+    waitingForContinue = false;
+    startScreen.classList.remove('show');
+    questionBox.style.display = 'block';
+    princessEl.style.opacity  = '1';
+    falls = 0; distance = 0;
+    fallsEl.textContent       = 0;
+    distanceEl.textContent    = 0;
+    maxDistanceEl.textContent = maxDistance;
+    $('destEl').textContent    = selectedDest.emoji;
+    $('destEl').style.filter   = 'drop-shadow(0 0 18px ' + selectedDest.glow + ')';
+    $('destLabel').textContent = selectedDest.name;
+
+    dotsContainer.innerHTML = '';
+    for (let i = 0; i <= maxDistance; i++) {
+      const d = document.createElement('div');
+      d.className = 'dot';
+      dotsContainer.appendChild(d);
+    }
+
+    updatePosition();
+    updateDots();
+    chronoEl.textContent = formatTime(0);
+    startChrono();
+    newQuestion();
+  }
+
+  function backToSelection() {
+    stopTimer();
+    stopChrono();
+    waitingForContinue   = false;
+    feedbackEl.className = 'feedback';
+    hintEl.className     = 'hint';
+    hintEl.textContent   = HINT_TEXT;
+    endScreen.classList.remove('show');
+    startScreen.classList.add('show');
+    updateBestLine();
+  }
+
+  function showFeedback(text, type, persist) {
+    clearTimeout(feedbackTimeout);
+    feedbackEl.textContent = text;
+    feedbackEl.className   = 'feedback show-' + type + (persist ? '-persist' : '');
+    if (!persist) feedbackTimeout = setTimeout(() => { feedbackEl.className = 'feedback'; }, 1500);
+  }
+
+  function submitAnswer() {
+    if (isLocked || waitingForContinue) return;
+    const raw = answerEl.value.trim();
+    if (!/^\d+$/.test(raw)) { answerEl.value = ''; answerEl.focus(); return; }
+    isLocked = true;
+    if (parseInt(raw, 10) === answerOf(current)) {
+      correctAnswer();
+    } else {
+      showFeedback('💥 ' + formatQuestion(current) + ' = ' + answerOf(current), 'fail', true);
+      fall();
+    }
+  }
+
+  function correctAnswer() {
+    stopTimer();
+    distance++;
+    if (distance >= maxDistance) {
+      stopChrono();
+      missionTime = performance.now() - missionStart;
+      chronoEl.textContent = formatTime(missionTime);
+    }
+    distanceEl.textContent = distance;
+    updatePosition();
+    updateDots();
+
+    princessEl.classList.add('advance');
+    cloudsEl.classList.add('fast');
+    const msgs = ['BRAVO ! 🌟', 'SUPER ! ✨', 'EN AVANT ! 🌸', 'PARFAIT ! 💫', 'GÉNIAL ! 🎉', 'OUI ! 👑'];
+    showFeedback(msgs[Math.floor(Math.random() * msgs.length)], 'success');
+    setTimeout(() => {
+      princessEl.classList.remove('advance');
+      cloudsEl.classList.remove('fast');
+    }, 700);
+
+    setTimeout(distance >= maxDistance ? endGame : newQuestion, distance >= maxDistance ? 1500 : 1200);
+  }
+
+  function fall() {
+    stopTimer();
+    falls++;
+    fallsEl.textContent = falls;
+
+    stumbleEl.style.left = princessEl.style.left || (START_POS + '%');
+    princessEl.classList.add('stumble');
+    stumbleEl.classList.add('boom');
+    cloudsEl.classList.add('stopped');
+
+    setTimeout(() => {
+      distance = 0;
+      distanceEl.textContent = 0;
+      updateDots();
+
+      princessEl.classList.remove('stumble');
+      stumbleEl.classList.remove('boom');
+      cloudsEl.classList.remove('stopped');
+      princessEl.style.transition = 'none';
+      princessEl.style.left       = START_POS + '%';
+      princessEl.style.opacity    = '0';
+
+      setTimeout(() => {
+        princessEl.style.transition = '';
+        princessEl.style.opacity    = '1';
+        waitingForContinue = true;
+        hintEl.className   = 'hint continue-hint';
+        hintEl.textContent = 'Touche l’écran ou appuie sur une touche pour continuer…';
+      }, 300);
+    }, 2200);
+  }
+
+  function continueAfterCrash() {
+    waitingForContinue   = false;
+    feedbackEl.className = 'feedback';
+    hintEl.className     = 'hint';
+    hintEl.textContent   = HINT_TEXT;
+    newQuestion();
+  }
+
+  function endGame() {
+    stopTimer();
+    questionBox.style.display = 'none';
+    endScreen.classList.add('show');
+    $('endTitle').textContent = '🎉 BRAVO ! LA PRINCESSE EST ARRIVÉE ' + selectedDest.to + ' !';
+    $('endMessage').innerHTML = 'Temps : <strong>' + formatTime(missionTime) + '</strong> · Chutes : <strong>' + falls + '</strong>';
+
+    const key = questKey(selectedDest, selectedOps, maxNumber, maxDistance, timerEnabled ? timerDuration : 0);
+    const { list, rank } = recordScore(key, missionTime, falls);
+    $('newRecord').hidden = rank !== 0;
+    const scoresList = $('scoresList');
+    scoresList.innerHTML = '';
+    list.forEach((s, i) => {
+      const li = document.createElement('li');
+      if (i === rank) li.className = 'current';
+      li.innerHTML = '<span>' + (i + 1) + '. ' + formatTime(s.time) + '</span>'
+        + '<span class="s-fall">' + plural(s.falls, 'chute') + ' · ' + s.date.split('-').reverse().join('/') + '</span>';
+      scoresList.appendChild(li);
+    });
+    $('scoresWrap').hidden = false;
+  }
+
+  // ── Entrées ──
+  answerEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitAnswer();
+  });
+
+  answerEl.addEventListener('input', () => {
+    answerEl.value = answerEl.value.replace(/\D/g, '');
+  });
+
+  $('okBtn').addEventListener('click', submitAnswer);
+  startBtn.addEventListener('click', startGame);
+  $('restartBtn').addEventListener('click', backToSelection);
+
+  document.addEventListener('keydown', (e) => {
+    if (waitingForContinue) {
+      // La touche sert à repartir : elle ne doit pas s'écrire dans la nouvelle réponse
+      e.preventDefault();
+      continueAfterCrash();
+      return;
+    }
+    if (startScreen.classList.contains('show')) {
+      if (e.key === 'Enter' && e.target.tagName !== 'BUTTON' && !startBtn.disabled) startGame();
+      return;
+    }
+    if (document.activeElement !== answerEl && !endScreen.classList.contains('show')) {
+      answerEl.focus();
+    }
+  });
+
+  $('game').addEventListener('pointerdown', (e) => {
+    if (waitingForContinue) {
+      e.preventDefault();
+      continueAfterCrash();
+    }
+  });
+
+  questionBox.style.display = 'none';
+  updatePosition();
+  updateBestLine();
+</script>
+</body>
+</html>
