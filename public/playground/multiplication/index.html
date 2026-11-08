@@ -603,6 +603,38 @@
 
   .end-screen.victory h1 { color: #00ff88; }
 
+  .best-line {
+    margin-top: 14px;
+    font-size: 1.05em;
+    color: #ffd700;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+    min-height: 1.4em;
+    text-align: center;
+  }
+  .new-record {
+    font-size: 1.4em;
+    color: #ffd700;
+    text-shadow: 0 0 15px #ffd700;
+    margin-bottom: 15px;
+    animation: recordPulse 1s ease-in-out infinite alternate;
+  }
+  @keyframes recordPulse { from { transform: scale(1); } to { transform: scale(1.08); } }
+  @media (prefers-reduced-motion: reduce) { .new-record { animation: none; } }
+  .scores {
+    list-style: none;
+    margin: 0 0 25px;
+    padding: 12px 22px;
+    background: rgba(0, 30, 60, 0.7);
+    border: 2px solid #00d4ff;
+    border-radius: 10px;
+    min-width: 260px;
+    font-variant-numeric: tabular-nums;
+  }
+  .scores-title { font-size: 0.9em; opacity: 0.8; margin-bottom: 6px; text-align: center; }
+  .scores li { display: flex; justify-content: space-between; gap: 20px; padding: 3px 0; }
+  .scores li.current { color: #00ffaa; font-weight: bold; text-shadow: 0 0 8px #00ffaa; }
+  .scores .s-crash { opacity: 0.7; font-size: 0.85em; }
+  #chrono { font-variant-numeric: tabular-nums; }
   .end-screen p {
     font-size: 1.5em;
     margin-bottom: 30px;
@@ -672,6 +704,7 @@
   <div class="hud">
     <div class="hud-item">Crashs : <span id="crashes">0</span></div>
     <div class="hud-item">Distance : <span id="distance">0</span>/<span id="maxDistance">15</span></div>
+    <div class="hud-item">⏱ <span id="chrono">0:00.0</span></div>
   </div>
 
   <div class="question-box" id="questionBox">
@@ -714,11 +747,17 @@
       <input type="number" class="option-number" id="stepsInput" value="15" min="1" max="99" onclick="event.stopPropagation()">
     </div>
     <button class="start-btn" id="startBtn" onclick="startGame()">DÉCOLLAGE 🚀</button>
+    <div class="best-line" id="bestLine"></div>
   </div>
 
   <div class="end-screen" id="endScreen">
     <h1 id="endTitle"></h1>
     <p id="endMessage"></p>
+    <div class="new-record" id="newRecord" hidden>🏆 NOUVEAU RECORD !</div>
+    <div id="scoresWrap" hidden>
+      <div class="scores-title">Meilleurs temps pour cette mission</div>
+      <ol class="scores" id="scoresList"></ol>
+    </div>
     <button class="restart-btn" onclick="backToSelection()">Nouvelle mission</button>
   </div>
 </div>
@@ -749,6 +788,81 @@
   let timerEnabled = false;
   let timerStart = 0;
   let timerRafId = null;
+  let missionStart = 0;
+  let missionTime = 0;
+  let chronoRafId = null;
+
+  // ── Chronomètre de mission ──
+  const chronoEl = document.getElementById('chrono');
+
+  function formatTime(ms) {
+    const tenths = Math.floor(ms / 100);
+    const min = Math.floor(tenths / 600);
+    const sec = Math.floor((tenths % 600) / 10);
+    return min + ':' + String(sec).padStart(2, '0') + '.' + (tenths % 10);
+  }
+
+  function startChrono() {
+    stopChrono();
+    missionStart = performance.now();
+    const tick = (now) => {
+      chronoEl.textContent = formatTime(now - missionStart);
+      chronoRafId = requestAnimationFrame(tick);
+    };
+    chronoRafId = requestAnimationFrame(tick);
+  }
+
+  function stopChrono() {
+    if (chronoRafId !== null) {
+      cancelAnimationFrame(chronoRafId);
+      chronoRafId = null;
+    }
+  }
+
+  // ── Meilleurs scores (stockés dans ce navigateur) ──
+  const SCORES_KEY = 'mission-multiplication:scores:v1';
+  const SCORES_KEPT = 5;
+
+  function loadScores() {
+    try { return JSON.parse(localStorage.getItem(SCORES_KEY)) || {}; }
+    catch (e) { return {}; }
+  }
+
+  function saveScores(all) {
+    try { localStorage.setItem(SCORES_KEY, JSON.stringify(all)); } catch (e) { /* stockage indisponible */ }
+  }
+
+  // Une mission = destination + tables + étapes + mode chrono : seuls les temps d'une même mission se comparent
+  function missionKey(planet, tables, steps, timerSec) {
+    return [planet.name, tables.slice().sort((a, b) => a - b).join(','), steps, timerSec || 0].join('|');
+  }
+
+  function recordScore(key, time, crashCount) {
+    const all = loadScores();
+    const list = all[key] || [];
+    const entry = { time: Math.round(time), crashes: crashCount, date: new Date().toISOString().slice(0, 10) };
+    list.push(entry);
+    list.sort((a, b) => a.time - b.time || a.crashes - b.crashes);
+    all[key] = list.slice(0, SCORES_KEPT);
+    saveScores(all);
+    return { list: all[key], rank: all[key].indexOf(entry) };
+  }
+
+  function currentConfigKey() {
+    const timerOn = document.getElementById('timerCheckbox').checked;
+    const timerSec = Math.max(3, parseInt(document.getElementById('timerSecondsInput').value) || 10);
+    const steps = Math.max(1, parseInt(document.getElementById('stepsInput').value) || 15);
+    return missionKey(selectedPlanet, getCheckedTables(), steps, timerOn ? timerSec : 0);
+  }
+
+  function updateBestLine() {
+    const el = document.getElementById('bestLine');
+    if (getCheckedTables().length === 0) { el.textContent = ''; return; }
+    const best = (loadScores()[currentConfigKey()] || [])[0];
+    el.textContent = best
+      ? '🏆 Record pour cette mission : ' + formatTime(best.time) + (best.crashes ? ' (' + best.crashes + ' crash' + (best.crashes > 1 ? 's' : '') + ')' : '')
+      : 'Pas encore de record pour cette mission';
+  }
 
   const startScreen = document.getElementById('startScreen');
   const tablesGrid = document.getElementById('tablesGrid');
@@ -771,6 +885,7 @@
       el.classList.add('selected');
       selectedPlanet = p;
       document.getElementById('stepsLabel').textContent = '🚀 Étapes avant ' + p.label + ' :';
+      updateBestLine();
     });
     planetSelector.appendChild(el);
   });
@@ -793,9 +908,14 @@
 
   function updateStartButton() {
     startBtn.disabled = getCheckedTables().length === 0;
+    updateBestLine();
   }
 
   tablesGrid.addEventListener('change', updateStartButton);
+  ['timerCheckbox', 'timerSecondsInput', 'stepsInput'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateBestLine);
+    document.getElementById(id).addEventListener('change', updateBestLine);
+  });
 
   function startGame() {
     selectedTables = getCheckedTables();
@@ -828,11 +948,15 @@
 
     updateShipPosition();
     updateDots();
+    chronoEl.textContent = formatTime(0);
+    startChrono();
     newQuestion();
   }
 
   function backToSelection() {
     stopTimer();
+    stopChrono();
+    updateBestLine();
     waitingForContinue   = false;
     feedbackEl.className = 'feedback';
     hintEl.className     = 'hint';
@@ -938,6 +1062,11 @@
   function correctAnswer() {
     stopTimer();
     distance += 1;
+    if (distance >= maxDistance) {
+      stopChrono();
+      missionTime = performance.now() - missionStart;
+      chronoEl.textContent = formatTime(missionTime);
+    }
     distanceEl.textContent = distance;
 
     updateShipPosition();
@@ -1008,7 +1137,21 @@
     questionBox.style.display = 'none';
     endScreen.classList.add('show', 'victory');
     endTitle.textContent = '🎉 BRAVO, TU AS ATTEINT ' + selectedPlanet.label.toUpperCase() + ' !';
-    endMessage.innerHTML = 'Crashs : <strong>' + crashes + '</strong>';
+    endMessage.innerHTML = 'Temps : <strong>' + formatTime(missionTime) + '</strong> · Crashs : <strong>' + crashes + '</strong>';
+
+    const key = missionKey(selectedPlanet, selectedTables, maxDistance, timerEnabled ? timerDuration : 0);
+    const { list, rank } = recordScore(key, missionTime, crashes);
+    document.getElementById('newRecord').hidden = rank !== 0;
+    const scoresList = document.getElementById('scoresList');
+    scoresList.innerHTML = '';
+    list.forEach((s, i) => {
+      const li = document.createElement('li');
+      if (i === rank) li.className = 'current';
+      li.innerHTML = '<span>' + (i + 1) + '. ' + formatTime(s.time) + '</span>'
+        + '<span class="s-crash">' + s.crashes + ' crash' + (s.crashes > 1 ? 's' : '') + ' · ' + s.date.split('-').reverse().join('/') + '</span>';
+      scoresList.appendChild(li);
+    });
+    document.getElementById('scoresWrap').hidden = false;
   }
 
   answerEl.addEventListener('keydown', (e) => {
