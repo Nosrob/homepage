@@ -634,7 +634,6 @@
   .scores li { display: flex; justify-content: space-between; gap: 20px; padding: 3px 0; }
   .scores li.current { color: #00ffaa; font-weight: bold; text-shadow: 0 0 8px #00ffaa; }
   .scores .s-crash { opacity: 0.7; font-size: 0.85em; }
-  #chrono { font-variant-numeric: tabular-nums; }
   .end-screen p {
     font-size: 1.5em;
     margin-bottom: 30px;
@@ -704,7 +703,6 @@
   <div class="hud">
     <div class="hud-item">Crashs : <span id="crashes">0</span></div>
     <div class="hud-item">Distance : <span id="distance">0</span>/<span id="maxDistance">15</span></div>
-    <div class="hud-item">⏱ <span id="chrono">0:00.0</span></div>
   </div>
 
   <div class="question-box" id="questionBox">
@@ -788,35 +786,15 @@
   let timerEnabled = false;
   let timerStart = 0;
   let timerRafId = null;
+  // Chronomètre de mission : mesuré en coulisse, affiché seulement à l'arrivée
   let missionStart = 0;
   let missionTime = 0;
-  let chronoRafId = null;
-
-  // ── Chronomètre de mission ──
-  const chronoEl = document.getElementById('chrono');
 
   function formatTime(ms) {
     const tenths = Math.floor(ms / 100);
     const min = Math.floor(tenths / 600);
     const sec = Math.floor((tenths % 600) / 10);
     return min + ':' + String(sec).padStart(2, '0') + '.' + (tenths % 10);
-  }
-
-  function startChrono() {
-    stopChrono();
-    missionStart = performance.now();
-    const tick = (now) => {
-      chronoEl.textContent = formatTime(now - missionStart);
-      chronoRafId = requestAnimationFrame(tick);
-    };
-    chronoRafId = requestAnimationFrame(tick);
-  }
-
-  function stopChrono() {
-    if (chronoRafId !== null) {
-      cancelAnimationFrame(chronoRafId);
-      chronoRafId = null;
-    }
   }
 
   // ── Meilleurs scores (stockés dans ce navigateur) ──
@@ -948,14 +926,12 @@
 
     updateShipPosition();
     updateDots();
-    chronoEl.textContent = formatTime(0);
-    startChrono();
+    missionStart = performance.now();
     newQuestion();
   }
 
   function backToSelection() {
     stopTimer();
-    stopChrono();
     updateBestLine();
     waitingForContinue   = false;
     feedbackEl.className = 'feedback';
@@ -1063,9 +1039,7 @@
     stopTimer();
     distance += 1;
     if (distance >= maxDistance) {
-      stopChrono();
       missionTime = performance.now() - missionStart;
-      chronoEl.textContent = formatTime(missionTime);
     }
     distanceEl.textContent = distance;
 

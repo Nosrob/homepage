@@ -669,7 +669,6 @@
   <div class="hud">
     <div class="hud-item">💔 Chutes : <span id="falls">0</span></div>
     <div class="hud-item">👟 <span id="distance">0</span>/<span id="maxDistance">15</span></div>
-    <div class="hud-item">⏱ <span id="chrono">0:00.0</span></div>
   </div>
 
   <div class="timer-bar" id="timerBar"><div class="timer-fill" id="timerFill"></div></div>
@@ -769,7 +768,7 @@
   let isLocked = false;
   let waitingForContinue = false;
   let timerStart = 0, timerRafId = null;
-  let missionStart = 0, missionTime = 0, chronoRafId = null;
+  let missionStart = 0, missionTime = 0; // chrono de quête : mesuré en coulisse, affiché seulement à l'arrivée
   let feedbackTimeout = null;
 
   const $ = (id) => document.getElementById(id);
@@ -789,7 +788,6 @@
   const timerBar      = $('timerBar');
   const timerFill     = $('timerFill');
   const cloudsEl      = $('clouds');
-  const chronoEl      = $('chrono');
   const startBtn      = $('startBtn');
   const destSelector  = $('destSelector');
   const rangeChips    = $('rangeChips');
@@ -892,21 +890,6 @@
     el.addEventListener('input', updateBestLine);
     el.addEventListener('change', updateBestLine);
   });
-
-  // ── Chronomètre de quête ──
-  function startChrono() {
-    stopChrono();
-    missionStart = performance.now();
-    const tick = (now) => {
-      chronoEl.textContent = formatTime(now - missionStart);
-      chronoRafId = requestAnimationFrame(tick);
-    };
-    chronoRafId = requestAnimationFrame(tick);
-  }
-
-  function stopChrono() {
-    if (chronoRafId !== null) { cancelAnimationFrame(chronoRafId); chronoRafId = null; }
-  }
 
   // ── Timer par réponse ──
   function stopTimer() {
@@ -1015,14 +998,12 @@
 
     updatePosition();
     updateDots();
-    chronoEl.textContent = formatTime(0);
-    startChrono();
+    missionStart = performance.now();
     newQuestion();
   }
 
   function backToSelection() {
     stopTimer();
-    stopChrono();
     waitingForContinue   = false;
     feedbackEl.className = 'feedback';
     hintEl.className     = 'hint';
@@ -1056,9 +1037,7 @@
     stopTimer();
     distance++;
     if (distance >= maxDistance) {
-      stopChrono();
       missionTime = performance.now() - missionStart;
-      chronoEl.textContent = formatTime(missionTime);
     }
     distanceEl.textContent = distance;
     updatePosition();
